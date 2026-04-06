@@ -34,12 +34,12 @@ namespace our
         std::vector<RenderCommand> opaqueCommands;
         std::vector<RenderCommand> transparentCommands;
         // Objects used for rendering a skybox
-        Mesh* skySphere;
-        TexturedMaterial* skyMaterial;
+        Mesh* skySphere = nullptr;
+        TexturedMaterial* skyMaterial = nullptr;
         // Objects used for Postprocessing
-        GLuint postprocessFrameBuffer, postProcessVertexArray;
-        Texture2D *colorTarget, *depthTarget;
-        TexturedMaterial* postprocessMaterial;
+        GLuint postprocessFrameBuffer = 0, postProcessVertexArray = 0;
+        Texture2D *colorTarget = nullptr, *depthTarget = nullptr;
+        TexturedMaterial* postprocessMaterial = nullptr;
     public:
         // Initialize the renderer including the sky and the Postprocessing objects.
         // windowSize is the width & height of the window (in pixels).
