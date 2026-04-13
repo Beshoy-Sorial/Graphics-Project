@@ -75,14 +75,9 @@ The class is very simple — it's essentially just a wrapper around `glSamplerPa
 **How to use it:**
 
 ```cpp
-// To use texture unit 0 with this sampler:
-glActiveTexture(GL_TEXTURE0);   // Activate unit 0
-texture->bind();                // Bind texture to unit 0
-sampler->bind(0);               // Bind sampler to unit 0 (overrides texture's own params)
-shader->set("tex", 0);          // Tell shader to use unit 0
-```
-
 When a sampler is bound to a texture unit, it **overrides** any filtering/wrapping settings stored directly in the texture object.
+
+> ⚠️ **Safety Tip:** If you are using a pointer to a Sampler (e.g. `Sampler* sampler`), always ensure it is initialized! An uninitialized pointer contains garbage and calling `sampler->bind(0)` will likely cause your application to hang or crash. Always use a null check: `if(sampler) sampler->bind(0);`.
 
 ---
 

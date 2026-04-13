@@ -213,8 +213,8 @@ void TexturedMaterial::setup() const {
     shader->set("alphaThreshold", alphaThreshold);   // Send threshold to shader
 
     glActiveTexture(GL_TEXTURE0);   // Use texture unit 0
-    texture->bind();                 // Bind the texture to unit 0
-    sampler->bind(0);                // Bind the sampler to unit 0
+    if(texture) texture->bind();     // [SAFETY] Bind the texture if it exists
+    if(sampler) sampler->bind(0);    // [SAFETY] Bind the sampler if it exists
     shader->set("tex", 0);          // Tell the shader: sampler2D "tex" = unit 0
 }
 
@@ -377,6 +377,22 @@ Before drawing object:
 
 ---
 
+## ⚠️ PRO-TIP: Safety & Troubleshooting
+
+### 1. The "Null Pointer" Nightmare
+In C++, pointers like `Texture2D* texture` or `Sampler* sampler` are **not** automatically set to `nullptr` when created. They contain garbage memory. 
+- **The Bug:** If you create a `TexturedMaterial` and forget to assign a texture/sampler, calling `texture->bind()` will try to access that garbage memory.
+- **The Symptom:** The application might crash immediately, or worse, it might run for a few seconds and then hang ("Not Responding") once the garbage address finally points to something illegal.
+- **The Fix:** ALWAYS use null checks in `setup()` as shown above: `if(texture) texture->bind();`.
+
+### 2. Synchronous Debugging & "Not Responding"
+You might see `glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS)` in `application.cpp`. 
+- **What it does:** It makes OpenGL wait for your debug callback to finish before it continues.
+- **The Danger:** If your driver emits many notifications (like "Buffer will use VIDEO memory"), and your code prints them to `std::cout`, the application will spend all its time doing console I/O.
+- **The Result:** The main loop slows to a crawl, and Windows will mark the window as "Not Responding". If you see this, try disabling synchronous debug output or filtering out "NOTIFICATION" level messages.
+
+---
+
 ## ✅ Key Things to Remember
 
 | Concept | Details |
@@ -385,6 +401,7 @@ Before drawing object:
 | `TintedMaterial` | Adds a `vec4 tint` → multiplied with vertex color in shader |
 | `TexturedMaterial` | Adds texture + sampler + alphaThreshold → texture is sampled and multiplied |
 | `virtual setup()` | Called before drawing; applies all the material's settings to OpenGL |
+| `Safety Checks` | **Crucial!** Always check if `texture` or `sampler` are null in `setup()` |
 | `discard` | Fragment shader keyword — completely skips the current pixel |
 | `alphaThreshold` | Pixels with `textureColor.a < threshold` are discarded |
 | `frag_color = tint * vertex_color * texture_color` | The final color formula |

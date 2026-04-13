@@ -274,6 +274,18 @@ shader->set("tex", 0);  // The sampler2D "tex" should read from unit 0
 
 ---
 
+## ⚠️ Safety Tip: Null Pointers
+
+When using pointers to textures (e.g., `Texture2D* texture`), always remember that they are not automatically null. If you forget to load a texture, it might point to garbage memory.
+
+**Best Practice:** Always check for null before binding in your rendering code:
+```cpp
+if(texture) texture->bind();
+```
+This prevents hard-to-debug crashes or "Not Responding" hangs.
+
+---
+
 ## 🔄 The Full Texture Pipeline
 
 ```
