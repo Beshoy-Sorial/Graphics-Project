@@ -1,0 +1,86 @@
+{
+    // ============================================================
+    // TEST-1: Emissive-only scene — NO lights at all
+    // Purpose: prove that emissive map glows without any light source
+    // Expected: dark room, but sphere shows smile pattern glowing
+    // ============================================================
+    "start-scene": "lighting-test",
+    "window": {
+        "title": "Lighting Test — Emissive Only (No Lights)",
+        "size": { "width": 1280, "height": 720 },
+        "fullscreen": false
+    },
+    "scene": {
+        "renderer": {},
+        "assets": {
+            "shaders": {
+                "lit": {
+                    "vs": "assets/shaders/lit.vert",
+                    "fs": "assets/shaders/lit.frag"
+                }
+            },
+            "textures": {
+                "moon":  "assets/textures/moon.jpg",
+                "smile": "assets/textures/smile.png",
+                "wood":  "assets/textures/wood.jpg"
+            },
+            "samplers": { "default": {} },
+            "meshes": {
+                "sphere": "assets/models/sphere.obj",
+                "plane":  "assets/models/plane.obj"
+            },
+            "materials": {
+                // Only emissive — will glow even with zero lights
+                "mat-glow": {
+                    "type": "lit",
+                    "shader": "lit",
+                    "pipelineState": {
+                        "faceCulling":  { "enabled": false },
+                        "depthTesting": { "enabled": true }
+                    },
+                    "emissive_map": "smile",
+                    "sampler": "default"
+                },
+                // Non-emissive sphere — should appear completely black (no lights, no emissive)
+                "mat-dark": {
+                    "type": "lit",
+                    "shader": "lit",
+                    "pipelineState": {
+                        "faceCulling":  { "enabled": false },
+                        "depthTesting": { "enabled": true }
+                    },
+                    "albedo_map": "wood",
+                    "sampler": "default"
+                }
+            }
+        },
+        "world": [
+            {
+                "position": [0, 1, 5],
+                "components": [
+                    { "type": "Camera" },
+                    { "type": "Free Camera Controller" }
+                ]
+            },
+            // Glowing sphere — smile should be visible even without lights
+            {
+                "position": [-1.5, 0, 0],
+                "components": [{
+                    "type": "Mesh Renderer",
+                    "mesh": "sphere",
+                    "material": "mat-glow"
+                }]
+            },
+            // Dark sphere — no emissive, no lights → should be completely black
+            {
+                "position": [1.5, 0, 0],
+                "components": [{
+                    "type": "Mesh Renderer",
+                    "mesh": "sphere",
+                    "material": "mat-dark"
+                }]
+            }
+            // ← intentionally NO Light entities in this scene
+        ]
+    }
+}

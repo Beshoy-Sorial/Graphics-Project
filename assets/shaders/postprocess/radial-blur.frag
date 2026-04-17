@@ -13,11 +13,12 @@ out vec4 frag_color;
 #define STRENGTH 0.2
 
 void main(){
+    frag_color = vec4(0.0);
     // To apply radial blur, we compute the direction outward from the center to the current pixel
     vec2 step_vector = (tex_coord - 0.5) * (STRENGTH / STEPS);
     // Then we sample multiple pixels along that direction and compute the average
     for(int i = 0; i < STEPS; i++){
-        frag_color += texture(tex, tex_coord + step_vector * i);    
+        frag_color += texture(tex, tex_coord + step_vector * i);
     }
     frag_color /= STEPS;
 }

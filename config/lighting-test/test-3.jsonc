@@ -1,0 +1,119 @@
+{
+    // ============================================================
+    // TEST-3: RGB Color Light Mixing
+    // Purpose: Three point lights (pure red, green, blue) at
+    //          different positions around a white sphere.
+    //          The sphere should show colored contributions on each
+    //          side and mixed colors (yellow, cyan, magenta) where
+    //          two lights overlap — proving per-light accumulation.
+    // ============================================================
+    "start-scene": "lighting-test",
+    "window": {
+        "title": "Lighting Test — RGB Color Mixing",
+        "size": { "width": 1280, "height": 720 },
+        "fullscreen": false
+    },
+    "scene": {
+        "renderer": {},
+        "assets": {
+            "shaders": {
+                "lit": { "vs": "assets/shaders/lit.vert", "fs": "assets/shaders/lit.frag" }
+            },
+            "textures": { "moon": "assets/textures/moon.jpg" },
+            "samplers": { "default": {} },
+            "meshes": {
+                "sphere": "assets/models/sphere.obj",
+                "plane":  "assets/models/plane.obj"
+            },
+            "materials": {
+                "mat-white": {
+                    "type": "lit", "shader": "lit",
+                    "pipelineState": {
+                        "faceCulling":  { "enabled": false },
+                        "depthTesting": { "enabled": true }
+                    },
+                    "albedo_map":    "moon",
+                    "specular_map":  "moon",
+                    "roughness_map": "moon",
+                    "sampler": "default"
+                }
+            }
+        },
+        "world": [
+            {
+                "position": [0, 2, 7],
+                "components": [
+                    { "type": "Camera" },
+                    { "type": "Free Camera Controller" }
+                ]
+            },
+
+            // Center sphere — white albedo, will show RGB color mixing
+            {
+                "position": [0, 0, 0],
+                "scale": [1.5, 1.5, 1.5],
+                "components": [{
+                    "type": "Mesh Renderer",
+                    "mesh": "sphere",
+                    "material": "mat-white"
+                }]
+            },
+
+            // Ground plane
+            {
+                "position": [0, -1.5, 0],
+                "scale": [12, 1, 12],
+                "components": [{
+                    "type": "Mesh Renderer",
+                    "mesh": "plane",
+                    "material": "mat-white"
+                }]
+            },
+
+            // RED point light — left side
+            {
+                "position": [-4, 1, 2],
+                "components": [{
+                    "type": "Light",
+                    "lightType": "point",
+                    "diffuse":  [1.0, 0.0, 0.0],
+                    "specular": [1.0, 0.0, 0.0],
+                    "ambient":  [0.0, 0.0, 0.0],
+                    "attenuationConstant":  1.0,
+                    "attenuationLinear":    0.14,
+                    "attenuationQuadratic": 0.07
+                }]
+            },
+
+            // GREEN point light — right side
+            {
+                "position": [4, 1, 2],
+                "components": [{
+                    "type": "Light",
+                    "lightType": "point",
+                    "diffuse":  [0.0, 1.0, 0.0],
+                    "specular": [0.0, 1.0, 0.0],
+                    "ambient":  [0.0, 0.0, 0.0],
+                    "attenuationConstant":  1.0,
+                    "attenuationLinear":    0.14,
+                    "attenuationQuadratic": 0.07
+                }]
+            },
+
+            // BLUE point light — top
+            {
+                "position": [0, 5, 0],
+                "components": [{
+                    "type": "Light",
+                    "lightType": "point",
+                    "diffuse":  [0.0, 0.0, 1.0],
+                    "specular": [0.0, 0.0, 1.0],
+                    "ambient":  [0.0, 0.0, 0.0],
+                    "attenuationConstant":  1.0,
+                    "attenuationLinear":    0.14,
+                    "attenuationQuadratic": 0.07
+                }]
+            }
+        ]
+    }
+}

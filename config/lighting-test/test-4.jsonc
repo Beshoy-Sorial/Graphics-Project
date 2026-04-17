@@ -1,0 +1,119 @@
+{
+    // ============================================================
+    // TEST-4: Spot Light Cone Edge (smoothstep falloff)
+    // Two spot lights shine down onto a floor plane and spheres:
+    //   Left — TIGHT cone (inner 10° / outer 20°): sharp bright circle
+    //   Right — WIDE cone (inner 30° / outer 60°): large soft gradient
+    // Both spots use [-90,0,0] rotation (pitch=-90 → local -Z becomes world -Y = down)
+    // A tiny ambient makes the dark floor barely visible for contrast.
+    // ============================================================
+    "start-scene": "lighting-test",
+    "window": {
+        "title": "Lighting Test — Spot Light Cone Edges",
+        "size": { "width": 1280, "height": 720 },
+        "fullscreen": false
+    },
+    "scene": {
+        "renderer": {},
+        "assets": {
+            "shaders": {
+                "lit": { "vs": "assets/shaders/lit.vert", "fs": "assets/shaders/lit.frag" }
+            },
+            "textures": { "wood": "assets/textures/wood.jpg" },
+            "samplers": { "default": {} },
+            "meshes": {
+                "plane":  "assets/models/plane.obj",
+                "sphere": "assets/models/sphere.obj"
+            },
+            "materials": {
+                "mat-floor": {
+                    "type": "lit", "shader": "lit",
+                    "pipelineState": {
+                        "faceCulling":  { "enabled": false },
+                        "depthTesting": { "enabled": true }
+                    },
+                    "albedo_map": "wood",
+                    "sampler": "default"
+                }
+            }
+        },
+        "world": [
+            // Camera: near floor level to clearly see spot cone circles
+            {
+                "position": [0, 1, 7],
+                "components": [
+                    { "type": "Camera" },
+                    { "type": "Free Camera Controller" }
+                ]
+            },
+
+            // Large floor plane at y=-1.5, same as test-0
+            {
+                "position": [0, -1.5, 0],
+                "scale": [20, 1, 10],
+                "components": [{
+                    "type": "Mesh Renderer",
+                    "mesh": "plane",
+                    "material": "mat-floor"
+                }]
+            },
+
+            // Sphere under TIGHT spot (left)
+            {
+                "position": [-4, -0.5, -2],
+                "components": [{
+                    "type": "Mesh Renderer",
+                    "mesh": "sphere",
+                    "material": "mat-floor"
+                }]
+            },
+
+            // Sphere under WIDE spot (right)
+            {
+                "position": [4, -0.5, -2],
+                "components": [{
+                    "type": "Mesh Renderer",
+                    "mesh": "sphere",
+                    "material": "mat-floor"
+                }]
+            },
+
+            // TIGHT spot — yellow-white, inner 10° / outer 20° → sharp edge
+            // rotation [-90,0,0]: pitch=-90 makes forward (0,0,-1) → (0,-1,0) = DOWN
+            {
+                "position": [-4, 7, -2],
+                "rotation": [-90, 0, 0],
+                "components": [{
+                    "type": "Light",
+                    "lightType": "spot",
+                    "diffuse":  [1.0, 1.0, 0.7],
+                    "specular": [1.0, 1.0, 0.7],
+                    "ambient":  [0.03, 0.03, 0.02],
+                    "attenuationConstant":  1.0,
+                    "attenuationLinear":    0.045,
+                    "attenuationQuadratic": 0.0075,
+                    "innerConeAngle": 10.0,
+                    "outerConeAngle": 20.0
+                }]
+            },
+
+            // WIDE spot — blue, inner 30° / outer 50° → broad soft halo
+            {
+                "position": [4, 7, -2],
+                "rotation": [-90, 0, 0],
+                "components": [{
+                    "type": "Light",
+                    "lightType": "spot",
+                    "diffuse":  [0.3, 0.6, 1.0],
+                    "specular": [0.3, 0.6, 1.0],
+                    "ambient":  [0.02, 0.02, 0.04],
+                    "attenuationConstant":  1.0,
+                    "attenuationLinear":    0.045,
+                    "attenuationQuadratic": 0.0075,
+                    "innerConeAngle": 30.0,
+                    "outerConeAngle": 50.0
+                }]
+            }
+        ]
+    }
+}

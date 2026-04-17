@@ -40,18 +40,25 @@ namespace our {
 
         // This function should set the OpenGL options to the values specified by this structure
         // For example, if faceCulling.enabled is true, you should call glEnable(GL_CULL_FACE), otherwise, you should call glDisable(GL_CULL_FACE)
-        void setup() const {
-            if(faceCulling.enabled) glEnable(GL_CULL_FACE);
-            else glDisable(GL_CULL_FACE);
+            void setup() const {
+            //TODO: (Req 4) Write this function
+            if(faceCulling.enabled){
+            glEnable(GL_CULL_FACE);
             glCullFace(faceCulling.culledFace);
             glFrontFace(faceCulling.frontFace);
+        } else {
+            glDisable(GL_CULL_FACE);
+        }
 
-            if(depthTesting.enabled) glEnable(GL_DEPTH_TEST);
-            else glDisable(GL_DEPTH_TEST);
+        if(depthTesting.enabled){
+            glEnable(GL_DEPTH_TEST);
             glDepthFunc(depthTesting.function);
+        } else {
+            glDisable(GL_DEPTH_TEST);
+        }
 
-            if(blending.enabled) glEnable(GL_BLEND);
-            else glDisable(GL_BLEND);
+        if(blending.enabled){
+            glEnable(GL_BLEND);
             glBlendEquation(blending.equation);
             glBlendFunc(blending.sourceFactor, blending.destinationFactor);
             glBlendColor(
@@ -60,13 +67,22 @@ namespace our {
                 blending.constantColor.b,
                 blending.constantColor.a
             );
-
-            glColorMask(colorMask.r, colorMask.g, colorMask.b, colorMask.a);
-            glDepthMask(depthMask);
+        } else {
+            glDisable(GL_BLEND);
         }
 
-        // Given a json object, this function deserializes a PipelineState structure
-        void deserialize(const nlohmann::json& data);
-    };
+        glColorMask(
+            colorMask.r,
+            colorMask.g,
+            colorMask.b,
+            colorMask.a
+        );
+
+        glDepthMask(depthMask);
+            }
+
+            // Given a json object, this function deserializes a PipelineState structure
+            void deserialize(const nlohmann::json& data);
+        };
 
 }

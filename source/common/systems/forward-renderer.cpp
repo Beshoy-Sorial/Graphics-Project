@@ -1,6 +1,7 @@
 #include "forward-renderer.hpp"
 #include "../mesh/mesh-utils.hpp"
 #include "../texture/texture-utils.hpp"
+#include "../material/material.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace our {
@@ -124,9 +125,14 @@ namespace our {
         CameraComponent* camera = nullptr;
         opaqueCommands.clear();
         transparentCommands.clear();
+        std::vector<LightComponent*> lights;
         for(auto entity : world->getEntities()){
             // If we hadn't found a camera yet, we look for a camera in this entity
             if(!camera) camera = entity->getComponent<CameraComponent>();
+            // Collect lights
+            if(auto light = entity->getComponent<LightComponent>(); light){
+                lights.push_back(light);
+            }
             // If this entity has a mesh renderer component
             if(auto meshRenderer = entity->getComponent<MeshRendererComponent>(); meshRenderer){
                 // We construct a command from it
@@ -183,11 +189,44 @@ namespace our {
         //TODO: (Req 9) Clear the color and depth buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
+        // Helper: if material is a LitMaterial, send camera position, model matrix, and light array
+        auto sendLitUniforms = [&](const RenderCommand& command){
+            LitMaterial* lit = dynamic_cast<LitMaterial*>(command.material);
+            if(!lit) return;
+            lit->shader->set("camera_position", cameraPosition);
+            lit->shader->set("object_to_world", command.localToWorld);
+            lit->shader->set("object_to_world_inv_transpose",
+                             glm::transpose(glm::inverse(command.localToWorld)));
+            int count = static_cast<int>(lights.size());
+            if(count > 16) count = 16;
+            lit->shader->set("light_count", count);
+            for(int i = 0; i < count; i++){
+                LightComponent* lc = lights[i];
+                std::string base = "lights[" + std::to_string(i) + "].";
+                lit->shader->set(base + "type",
+                    static_cast<int>(lc->lightType));
+                glm::mat4 ltw = lc->getOwner()->getLocalToWorldMatrix();
+                lit->shader->set(base + "position",
+                    glm::vec3(ltw * glm::vec4(0,0,0,1)));
+                lit->shader->set(base + "direction",
+                    glm::normalize(glm::vec3(ltw * glm::vec4(0,0,-1,0))));
+                lit->shader->set(base + "diffuse",  lc->diffuse);
+                lit->shader->set(base + "specular", lc->specular);
+                lit->shader->set(base + "ambient",  lc->ambient);
+                lit->shader->set(base + "attenuationConstant",  lc->attenuationConstant);
+                lit->shader->set(base + "attenuationLinear",    lc->attenuationLinear);
+                lit->shader->set(base + "attenuationQuadratic", lc->attenuationQuadratic);
+                lit->shader->set(base + "innerCutoff", glm::cos(lc->innerConeAngle));
+                lit->shader->set(base + "outerCutoff", glm::cos(lc->outerConeAngle));
+            }
+        };
+
         //TODO: (Req 9) Draw all the opaque commands
         // Don't forget to set the "transform" uniform to be equal the model-view-projection matrix for each render command
         for(const auto& command : opaqueCommands){
             command.material->setup();
             command.material->shader->set("transform", VP * command.localToWorld);
+            sendLitUniforms(command);
             command.mesh->draw();
         }
         
@@ -221,6 +260,7 @@ namespace our {
         for(const auto& command : transparentCommands){
             command.material->setup();
             command.material->shader->set("transform", VP * command.localToWorld);
+            sendLitUniforms(command);
             command.mesh->draw();
         }
         

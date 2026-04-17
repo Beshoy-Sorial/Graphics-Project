@@ -1,0 +1,84 @@
+{
+    // ============================================================
+    // TEST-6: Directional Light in Isolation
+    // Purpose: Verify that directional light works correctly alone.
+    //   - No position: direction only, from entity rotation
+    //   - No attenuation: distance does not affect brightness
+    //   - All surfaces at the same angle get identical brightness
+    //     regardless of how far they are from the "light entity"
+    //   - Three spheres at vastly different Z positions — if they
+    //     look identical in brightness the directional math is correct
+    //     (a point light would fade with distance; directional must not)
+    //   - Rotation [-30, 45, 0]: light comes from upper-left-front
+    // ============================================================
+    "start-scene": "lighting-test",
+    "window": {
+        "title": "Lighting Test — Directional Light Only",
+        "size": { "width": 1280, "height": 720 },
+        "fullscreen": false
+    },
+    "scene": {
+        "renderer": {},
+        "assets": {
+            "shaders": {
+                "lit": { "vs": "assets/shaders/lit.vert", "fs": "assets/shaders/lit.frag" }
+            },
+            "textures": { "moon": "assets/textures/moon.jpg" },
+            "samplers": { "default": {} },
+            "meshes": {
+                "sphere": "assets/models/sphere.obj",
+                "plane":  "assets/models/plane.obj"
+            },
+            "materials": {
+                "mat-neutral": {
+                    "type": "lit", "shader": "lit",
+                    "pipelineState": {
+                        "faceCulling":  { "enabled": false },
+                        "depthTesting": { "enabled": true }
+                    },
+                    "albedo_map":    "moon",
+                    "specular_map":  "moon",
+                    "roughness_map": "moon",
+                    "sampler": "default"
+                }
+            }
+        },
+        "world": [
+            {
+                "position": [0, 2, 10],
+                "components": [
+                    { "type": "Camera" },
+                    { "type": "Free Camera Controller" }
+                ]
+            },
+
+            // Sphere CLOSE to camera (z=0)
+            { "position": [-3, 0, 0], "components": [{ "type": "Mesh Renderer", "mesh": "sphere", "material": "mat-neutral" }] },
+            // Sphere MID distance (z=-5)
+            { "position": [0,  0, -5], "components": [{ "type": "Mesh Renderer", "mesh": "sphere", "material": "mat-neutral" }] },
+            // Sphere FAR away (z=-12)
+            { "position": [3,  0, -12], "components": [{ "type": "Mesh Renderer", "mesh": "sphere", "material": "mat-neutral" }] },
+
+            // Ground
+            {
+                "position": [0, -1.5, -4],
+                "scale": [14, 1, 20],
+                "components": [{ "type": "Mesh Renderer", "mesh": "plane", "material": "mat-neutral" }]
+            },
+
+            // SINGLE directional light — no position, direction from rotation
+            // rotation [-30, 45, 0]: light shines from upper-left-front → right-back-down
+            // Expected: all 3 spheres lit identically (same normal orientation = same NdotL)
+            {
+                "rotation": [-30, 45, 0],
+                "components": [{
+                    "type": "Light",
+                    "lightType": "directional",
+                    "diffuse":  [0.9, 0.85, 0.7],
+                    "specular": [1.0, 0.95, 0.8],
+                    "ambient":  [0.08, 0.08, 0.1]
+                }]
+            }
+        ]
+    }
+}

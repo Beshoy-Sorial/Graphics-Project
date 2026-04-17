@@ -53,12 +53,28 @@ namespace our {
         void deserialize(const nlohmann::json& data) override;
     };
 
+    // LitMaterial supports the Phong lighting model with 5 texture maps
+    class LitMaterial : public Material {
+    public:
+        Texture2D* albedo_map           = nullptr;
+        Texture2D* specular_map         = nullptr;
+        Texture2D* ambient_occlusion_map= nullptr;
+        Texture2D* roughness_map        = nullptr;
+        Texture2D* emissive_map         = nullptr;
+        Sampler*   sampler              = nullptr;
+
+        void setup() const override;
+        void deserialize(const nlohmann::json& data) override;
+    };
+
     // This function returns a new material instance based on the given type
     inline Material* createMaterialFromType(const std::string& type){
         if(type == "tinted"){
             return new TintedMaterial();
         } else if(type == "textured"){
             return new TexturedMaterial();
+        } else if(type == "lit"){
+            return new LitMaterial();
         } else {
             return new Material();
         }

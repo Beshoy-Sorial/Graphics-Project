@@ -1,0 +1,87 @@
+{
+    // ============================================================
+    // TEST-5: Point Light Attenuation Distance
+    // Purpose: Four identical spheres placed at increasing distances
+    //          from a single point light (dist ≈ 1, 3, 6, 10 units).
+    //          Brightness must visibly drop off with distance following
+    //          the quadratic formula: 1/(c + l*d + q*d²).
+    //          All four spheres have the same white material — any
+    //          brightness difference is purely from attenuation.
+    // ============================================================
+    "start-scene": "lighting-test",
+    "window": {
+        "title": "Lighting Test — Point Light Attenuation",
+        "size": { "width": 1280, "height": 720 },
+        "fullscreen": false
+    },
+    "scene": {
+        "renderer": {},
+        "assets": {
+            "shaders": {
+                "lit": { "vs": "assets/shaders/lit.vert", "fs": "assets/shaders/lit.frag" }
+            },
+            "textures": { "moon": "assets/textures/moon.jpg" },
+            "samplers": { "default": {} },
+            "meshes": { "sphere": "assets/models/sphere.obj", "plane": "assets/models/plane.obj" },
+            "materials": {
+                "mat-neutral": {
+                    "type": "lit", "shader": "lit",
+                    "pipelineState": {
+                        "faceCulling":  { "enabled": false },
+                        "depthTesting": { "enabled": true }
+                    },
+                    "albedo_map":    "moon",
+                    "specular_map":  "moon",
+                    "roughness_map": "moon",
+                    "sampler": "default"
+                }
+            }
+        },
+        "world": [
+            // Camera: side view along the X axis so we see all 4 spheres clearly
+            {
+                "position": [4, 3, 14],
+                "rotation": [-10, 0, 0],
+                "components": [
+                    { "type": "Camera" },
+                    { "type": "Free Camera Controller" }
+                ]
+            },
+
+            // Ground
+            {
+                "position": [4, -1.5, 0],
+                "scale": [24, 1, 8],
+                "components": [{
+                    "type": "Mesh Renderer",
+                    "mesh": "plane",
+                    "material": "mat-neutral"
+                }]
+            },
+
+            // Sphere 1 — distance ~1 from light (very bright)
+            { "position": [-1, 0, 0],  "components": [{ "type": "Mesh Renderer", "mesh": "sphere", "material": "mat-neutral" }] },
+            // Sphere 2 — distance ~3 (medium bright)
+            { "position": [2, 0, 0],   "components": [{ "type": "Mesh Renderer", "mesh": "sphere", "material": "mat-neutral" }] },
+            // Sphere 3 — distance ~6 (dim)
+            { "position": [6, 0, 0],   "components": [{ "type": "Mesh Renderer", "mesh": "sphere", "material": "mat-neutral" }] },
+            // Sphere 4 — distance ~11 (very dim)
+            { "position": [11, 0, 0],  "components": [{ "type": "Mesh Renderer", "mesh": "sphere", "material": "mat-neutral" }] },
+
+            // Single point light at x=-2, y=1 — strong, no ambient so falloff is clear
+            {
+                "position": [-2, 1, 0],
+                "components": [{
+                    "type": "Light",
+                    "lightType": "point",
+                    "diffuse":  [1.5, 1.5, 1.5],
+                    "specular": [1.5, 1.5, 1.5],
+                    "ambient":  [0.0, 0.0, 0.0],
+                    "attenuationConstant":  1.0,
+                    "attenuationLinear":    0.22,
+                    "attenuationQuadratic": 0.20
+                }]
+            }
+        ]
+    }
+}

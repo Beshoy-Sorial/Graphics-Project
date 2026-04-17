@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)   # Selects the minimum version of CMake required to run this file
+cmake_minimum_required(VERSION 3.5.0)   # Selects the minimum version of CMake required to run this file
 project(GFX-LAB VERSION 0.1.0)          # Here we select the project name and version
 
 # Linux compatibility
@@ -83,6 +83,8 @@ set(COMMON_SOURCES
         source/common/components/free-camera-controller.cpp
         source/common/components/movement.hpp
         source/common/components/movement.cpp
+        source/common/components/light.hpp
+        source/common/components/light.cpp
         source/common/components/component-deserializer.hpp
 
         source/common/systems/forward-renderer.hpp
