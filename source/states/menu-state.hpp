@@ -9,6 +9,7 @@
 
 #include <array>
 #include <functional>
+#include "../common/tournament-manager.hpp"
 
 // This struct is used to store the location and size of a button and the code
 // it should execute when clicked
@@ -63,14 +64,10 @@ class Menustate : public our::State {
     menuMaterial->shader->attach("assets/shaders/textured.frag",
                                  GL_FRAGMENT_SHADER);
     menuMaterial->shader->link();
-    // Then we load the menu texture
-    menuMaterial->texture =
-        our::texture_utils::loadImage("assets/textures/menu.png");
-    // And create a sampler for it
-    menuMaterial->sampler = new our::Sampler();
-    // Initially, the menu material will be black, then it will fade in
-    menuMaterial->tint = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    // Menu background: Solid Red
+    menuMaterial->tint = glm::vec4(0.8f, 0.1f, 0.1f, 1.0f);
     menuMaterial->alphaThreshold = 0.0f;
+    menuMaterial->texture = nullptr; // No texture needed
 
     // Second, we create a material to highlight the hovered buttons
     highlightMaterial = new our::TintedMaterial();
@@ -138,13 +135,16 @@ class Menustate : public our::State {
     // receive when it is called.
     //      We leave it empty since button actions receive no input.
     // - The body {} which contains the code to be executed.
-    buttons[0].position = {830.0f, 607.0f};
-    buttons[0].size = {400.0f, 33.0f};
-    buttons[0].action = [this]() { this->getApp()->changeState("play"); };
+    buttons[0].position = {-1000.0f, -1000.0f}; // Move off screen
+    buttons[0].size = {0.0f, 0.0f};
+    buttons[0].action = []() {};
 
-    buttons[1].position = {830.0f, 644.0f};
-    buttons[1].size = {400.0f, 33.0f};
-    buttons[1].action = [this]() { this->getApp()->close(); };
+    buttons[1].position = {-1000.0f, -1000.0f};
+    buttons[1].size = {0.0f, 0.0f};
+    buttons[1].action = []() {};
+
+    // Ensure mouse is unlocked for character selection
+    getApp()->getMouse().unlockMouse(getApp()->getWindow());
   }
 
   void onDraw(double deltaTime) override {
@@ -152,8 +152,8 @@ class Menustate : public our::State {
     auto &keyboard = getApp()->getKeyboard();
 
     if (keyboard.justPressed(GLFW_KEY_SPACE)) {
-      // If the space key is pressed in this frame, go to the play state
-      getApp()->changeState("play");
+      // If the space key is pressed in this frame, go to the bracket state
+      getApp()->changeState("bracket");
     } else if (keyboard.justPressed(GLFW_KEY_ESCAPE)) {
       // If the escape key is pressed in this frame, exit the game
       getApp()->close();
@@ -194,13 +194,16 @@ class Menustate : public our::State {
 
     // First, we apply the fading effect.
     time += (float)deltaTime;
-    menuMaterial->tint = glm::vec4(glm::smoothstep(0.00f, 2.00f, time));
-    // Then we render the menu background
-    // Notice that I don't clear the screen first, since I assume that the menu
-    // rectangle will draw over the whole window anyway.
+    // Then we render the menu background (Solid Red)
+    // Clear with red color
+    glClearColor(0.8f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Skip drawing the rectangle with texture if we just want a solid background
+    // but we can also just draw a tinted rect
     menuMaterial->setup();
     menuMaterial->shader->set("transform", VP * M);
-    rectangle->draw();
+    // rectangle->draw(); // Comment out to just use glClearColor
 
     // For every button, check if the mouse is inside it. If the mouse is
     // inside, we draw the highlight rectangle over it.
@@ -214,11 +217,76 @@ class Menustate : public our::State {
     }
   }
 
+  void onImmediateGui() override {
+    // Character Selection Window
+    ImGuiIO &io = ImGui::GetIO();
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+                            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_Always);
+
+    ImGui::Begin("Select Your Fighter", nullptr,
+                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoCollapse);
+
+    auto &tm = our::TournamentManager::getInstance();
+    const auto &chars = tm.characters;
+
+    ImGui::Columns(4, "CharacterGrid", false);
+    for (int i = 0; i < (int)chars.size(); ++i) {
+      ImGui::PushID(i);
+
+      // Button background color based on character signature color
+      ImVec4 col = ImVec4(chars[i].buttonColor.r, chars[i].buttonColor.g,
+                          chars[i].buttonColor.b, 1.0f);
+      ImGui::PushStyleColor(ImGuiCol_Button, col);
+      ImVec4 hoverCol = ImVec4(col.x * 1.2f, col.y * 1.2f, col.z * 1.2f, 1.0f);
+      ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoverCol);
+
+      // If this character is selected, show a border or highlight
+      bool isSelected = (tm.selectedCharacterIndex == i);
+      if (isSelected) {
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 4.0f);
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 1, 1));
+      }
+
+      if (ImGui::Button(chars[i].name.c_str(), ImVec2(130, 130))) {
+        tm.selectedCharacterIndex = i;
+      }
+
+      if (isSelected) {
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
+      }
+
+      ImGui::PopStyleColor(2);
+      ImGui::PopID();
+      ImGui::NextColumn();
+    }
+    ImGui::Columns(1);
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    const auto &selected = tm.getSelectedCharacter();
+    ImGui::Text("Selected: %s", selected.name.c_str());
+    ImGui::Text("Stats: Strength %.1fx, Speed %.1fx", selected.strength,
+                selected.speed);
+
+    ImGui::Spacing();
+    if (ImGui::Button("START TOURNAMENT", ImVec2(-1, 50))) {
+      tm.reset(); // Clear old progress for a new run
+      this->getApp()->changeState("bracket");
+    }
+
+    ImGui::End();
+  }
+
   void onDestroy() override {
     // Delete all the allocated resources
     delete rectangle;
-    delete menuMaterial->texture;
-    delete menuMaterial->sampler;
+    if (menuMaterial->texture) delete menuMaterial->texture;
+    if (menuMaterial->sampler) delete menuMaterial->sampler;
     delete menuMaterial->shader;
     delete menuMaterial;
     delete highlightMaterial->shader;
