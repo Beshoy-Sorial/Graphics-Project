@@ -45,6 +45,7 @@ set(COMMON_SOURCES
         source/common/asset-loader.cpp
         source/common/asset-loader.hpp
         source/common/deserialize-utils.hpp
+        source/common/audio.cpp
 
         source/common/shader/shader.hpp
         source/common/shader/shader.cpp
@@ -85,12 +86,15 @@ set(COMMON_SOURCES
         source/common/components/movement.cpp
         source/common/components/light.hpp
         source/common/components/light.cpp
+        source/common/components/fighter.hpp
+        source/common/components/fighter.cpp
         source/common/components/component-deserializer.hpp
 
         source/common/systems/forward-renderer.hpp
         source/common/systems/forward-renderer.cpp
         source/common/systems/free-camera-controller.hpp
         source/common/systems/movement.hpp
+        source/common/systems/player-controller.hpp
 )
 
 # Define the directories in which to search for the included headers
