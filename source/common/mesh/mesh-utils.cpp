@@ -47,24 +47,38 @@ our::Mesh* our::mesh_utils::loadOBJ(const std::string& filename) {
                     attrib.vertices[3 * index.vertex_index + 2]
             };
 
-            vertex.normal = {
-                    attrib.normals[3 * index.normal_index + 0],
-                    attrib.normals[3 * index.normal_index + 1],
-                    attrib.normals[3 * index.normal_index + 2]
-            };
+            // Guard: some OBJ files omit normals on certain faces (index == -1)
+            if (index.normal_index >= 0) {
+                vertex.normal = {
+                        attrib.normals[3 * index.normal_index + 0],
+                        attrib.normals[3 * index.normal_index + 1],
+                        attrib.normals[3 * index.normal_index + 2]
+                };
+            } else {
+                vertex.normal = {0.0f, 1.0f, 0.0f}; // fallback up-vector
+            }
 
-            vertex.tex_coord = {
-                    attrib.texcoords[2 * index.texcoord_index + 0],
-                    attrib.texcoords[2 * index.texcoord_index + 1]
-            };
+            // Guard: some OBJ files omit UV coords on certain faces (index == -1)
+            if (index.texcoord_index >= 0) {
+                vertex.tex_coord = {
+                        attrib.texcoords[2 * index.texcoord_index + 0],
+                        attrib.texcoords[2 * index.texcoord_index + 1]
+                };
+            } else {
+                vertex.tex_coord = {0.0f, 0.0f}; // fallback
+            }
 
-
-            vertex.color = {
-                    attrib.colors[3 * index.vertex_index + 0] * 255,
-                    attrib.colors[3 * index.vertex_index + 1] * 255,
-                    attrib.colors[3 * index.vertex_index + 2] * 255,
-                    255
-            };
+            // Guard: attrib.colors may be empty if the OBJ has no vertex colours
+            if (!attrib.colors.empty()) {
+                vertex.color = {
+                        attrib.colors[3 * index.vertex_index + 0] * 255,
+                        attrib.colors[3 * index.vertex_index + 1] * 255,
+                        attrib.colors[3 * index.vertex_index + 2] * 255,
+                        255
+                };
+            } else {
+                vertex.color = {255, 255, 255, 255}; // fallback white
+            }
 
             // See if we already stored a similar vertex
             auto it = vertex_map.find(vertex);
