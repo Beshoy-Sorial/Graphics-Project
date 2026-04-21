@@ -1,7 +1,8 @@
 #pragma once
 
 #include <application.hpp>
-
+#include <systems/audience-system.hpp>
+#include <components/audience.hpp>
 #include <ecs/world.hpp>
 #include <systems/forward-renderer.hpp>
 #include <systems/free-camera-controller.hpp>
@@ -19,6 +20,7 @@ class Playstate: public our::State {
     our::FreeCameraControllerSystem cameraController;
     our::MovementSystem movementSystem;
     our::PlayerControllerSystem playerController;
+    our::AudienceSystem audienceSystem;
     ma_engine audioEngine;
     float lastDeltaTime = 0.016f;
 
@@ -45,6 +47,105 @@ class Playstate: public our::State {
         ma_engine_init(NULL, &audioEngine);
         playerController.setAudioEngine(&audioEngine);
 
+      
+        audienceSystem.setAudioEngine(&audioEngine);
+
+       
+        int numRows = 3;
+        int peoplePerRow[3] = {40, 50, 60}; 
+        float startRadius = 7.5f;
+        float rowSpacing = 1.5f; 
+        float heightStep = 0.9f; 
+
+        
+        for(int row = 0; row < numRows; row++) {
+            int count = peoplePerRow[row];
+            float currentRadius = startRadius + (row * rowSpacing);
+            float currentBaseY = row * heightStep; 
+
+            for(int i = 0; i < count; i++) {
+                
+                float angle = (float)i * (glm::pi<float>() * 2.0f / count);
+                
+                
+                float randomOffset = ((rand() % 100 / 100.0f) - 0.5f) * 0.2f;
+                float finalAngle = angle + randomOffset;
+
+                
+                our::Entity* spectator = world.add();
+                spectator->name = "Audience";
+                spectator->localTransform.position = glm::vec3(cos(finalAngle) * currentRadius, currentBaseY, sin(finalAngle) * currentRadius);
+                
+               
+                spectator->localTransform.rotation.y = std::atan2(-spectator->localTransform.position.x, -spectator->localTransform.position.z);
+                
+                auto* audComp = spectator->addComponent<our::AudienceComponent>();
+                audComp->basePositionY = currentBaseY; 
+
+                
+                std::string torsoColors[] = {"torso_red", "torso_blue", "torso_green", "torso_yellow", "torso_purple", "torso_cyan", "torso_orange", "torso_black"};
+                int colorIndex = rand() % 8;
+                std::string selectedColor = torsoColors[colorIndex];
+
+                
+                auto* mrTorso = spectator->addComponent<our::MeshRendererComponent>();
+                mrTorso->mesh = our::AssetLoader<our::Mesh>::get("torso");
+                mrTorso->material = our::AssetLoader<our::Material>::get(selectedColor);
+                spectator->localTransform.scale = glm::vec3(0.45f, 0.45f, 0.45f); 
+
+                
+                our::Entity* head = world.add();
+                head->name = "Head";
+                head->parent = spectator;
+                head->localTransform.position = glm::vec3(0.0f, 1.8f, 0.0f); 
+                head->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f);
+                auto* mrHead = head->addComponent<our::MeshRendererComponent>();
+                mrHead->mesh = our::AssetLoader<our::Mesh>::get("head");
+                mrHead->material = our::AssetLoader<our::Material>::get("skin");
+
+                
+                our::Entity* rightArm = world.add();
+                rightArm->name = "Right_Arm";
+                rightArm->parent = spectator;
+                rightArm->localTransform.position = glm::vec3(0.8f, 1.5f, 0.0f); 
+                rightArm->localTransform.rotation.x = -glm::pi<float>() * 0.8f; 
+                rightArm->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f); 
+                auto* mrRArm = rightArm->addComponent<our::MeshRendererComponent>();
+                mrRArm->mesh = our::AssetLoader<our::Mesh>::get("right_arm");
+                mrRArm->material = our::AssetLoader<our::Material>::get(selectedColor);
+
+                
+                our::Entity* leftArm = world.add();
+                leftArm->name = "Left_Arm";
+                leftArm->parent = spectator;
+                leftArm->localTransform.position = glm::vec3(-0.8f, 1.5f, 0.0f); 
+                leftArm->localTransform.rotation.x = -glm::pi<float>() * 0.8f; 
+                leftArm->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f); 
+                auto* mrLArm = leftArm->addComponent<our::MeshRendererComponent>();
+                mrLArm->mesh = our::AssetLoader<our::Mesh>::get("left_arm");
+                mrLArm->material = our::AssetLoader<our::Material>::get(selectedColor);
+                
+                
+                our::Entity* rightLeg = world.add();
+                rightLeg->name = "Right_Leg";
+                rightLeg->parent = spectator;
+                rightLeg->localTransform.position = glm::vec3(0.35f, 0.0f, 0.0f); 
+                rightLeg->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f); 
+                auto* mrRLeg = rightLeg->addComponent<our::MeshRendererComponent>();
+                mrRLeg->mesh = our::AssetLoader<our::Mesh>::get("right_leg");
+                mrRLeg->material = our::AssetLoader<our::Material>::get(selectedColor);
+
+               
+                our::Entity* leftLeg = world.add();
+                leftLeg->name = "Left_Leg";
+                leftLeg->parent = spectator;
+                leftLeg->localTransform.position = glm::vec3(-0.35f, 0.0f, 0.0f); 
+                leftLeg->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f); 
+                auto* mrLLeg = leftLeg->addComponent<our::MeshRendererComponent>();
+                mrLLeg->mesh = our::AssetLoader<our::Mesh>::get("left_leg");
+                mrLLeg->material = our::AssetLoader<our::Material>::get(selectedColor);
+            }
+        }
         // Apply selected character identity to the player
         auto& tm = our::TournamentManager::getInstance();
         const auto& selected = tm.getSelectedCharacter();
@@ -102,6 +203,7 @@ class Playstate: public our::State {
         lastDeltaTime = (float)deltaTime;
         // Run the player controller FIRST so movement is applied before rendering
         playerController.update(&world, (float)deltaTime);
+        audienceSystem.update(&world, (float)deltaTime);
         // Run other systems
         movementSystem.update(&world, (float)deltaTime);
         cameraController.update(&world, (float)deltaTime);

@@ -7,6 +7,7 @@
 #include "movement.hpp"
 #include "light.hpp"
 #include "fighter.hpp"
+#include "audience.hpp"
 
 namespace our {
 
@@ -27,6 +28,8 @@ namespace our {
             component = entity->addComponent<LightComponent>();
         } else if (type == FighterComponent::getID()) {
             component = entity->addComponent<FighterComponent>();
+        } else if (type == AudienceComponent::getID()) {
+            component = entity->addComponent<AudienceComponent>();
         }
         if(component) component->deserialize(data);
     }
