@@ -58,6 +58,25 @@ class Playstate: public our::State {
         aiDef.strength *= (0.8f + tm.currentRound * 0.2f);
         aiDef.speed *= (0.8f + tm.currentRound * 0.1f);
 
+        // Apply selected difficulty
+        switch (tm.selectedDifficulty) {
+            case our::DifficultyLevel::Easy:
+                aiDef.strength *= 0.85f;
+                aiDef.speed    *= 0.90f;
+                break;
+            case our::DifficultyLevel::Medium:
+        // baseline (no extra change)
+                break;
+            case our::DifficultyLevel::Hard:
+                aiDef.strength *= 1.15f;
+                aiDef.speed    *= 1.12f;
+                break;
+            case our::DifficultyLevel::Difficult:
+                aiDef.strength *= 1.30f;
+                aiDef.speed    *= 1.22f;
+                break;
+        }
+
         for (auto entity : world.getEntities()) {
             // Check for Player
             if (entity->name.find("Player_Torso") != std::string::npos || 
@@ -87,6 +106,56 @@ class Playstate: public our::State {
                     fighter->strengthMultiplier = aiDef.strength;
                     fighter->speedMultiplier = aiDef.speed;
                     fighter->skinMaterialName = aiDef.torsoMaterial;
+                    // Behavior profile by selected difficulty
+                    switch (tm.selectedDifficulty) {
+                        case our::DifficultyLevel::Easy:
+                           fighter->aiAttackWeight = 0.25f;
+                         fighter->aiDefendWeight = 0.30f;
+                         fighter->aiIdleWeight = 0.45f;
+                         fighter->aiDecisionMin = 0.70f;
+                         fighter->aiDecisionMax = 1.30f;
+                         fighter->aiApproachDistance = 1.35f;
+                         fighter->aiRetreatDistance = 0.55f;
+                            fighter->aiBlockChance = 0.20f;
+                         fighter->aiRecoveryChancePerFrame = 0.03f;
+                         break;
+                    
+                     case our::DifficultyLevel::Medium:
+                         fighter->aiAttackWeight = 0.40f;
+                         fighter->aiDefendWeight = 0.30f;
+                         fighter->aiIdleWeight = 0.30f;
+                         fighter->aiDecisionMin = 0.45f;
+                         fighter->aiDecisionMax = 1.00f;
+                         fighter->aiApproachDistance = 1.20f;
+                         fighter->aiRetreatDistance = 0.70f;
+                         fighter->aiBlockChance = 0.30f;
+                            fighter->aiRecoveryChancePerFrame = 0.05f;
+                            break;
+                    
+                     case our::DifficultyLevel::Hard:
+                         fighter->aiAttackWeight = 0.52f;
+                         fighter->aiDefendWeight = 0.33f;
+                         fighter->aiIdleWeight = 0.15f;
+                         fighter->aiDecisionMin = 0.30f;
+                         fighter->aiDecisionMax = 0.70f;
+                         fighter->aiApproachDistance = 1.15f;
+                         fighter->aiRetreatDistance = 0.80f;
+                         fighter->aiBlockChance = 0.45f;
+                         fighter->aiRecoveryChancePerFrame = 0.07f;
+                            break;
+                    
+                     case our::DifficultyLevel::Difficult:
+                         fighter->aiAttackWeight = 0.60f;
+                         fighter->aiDefendWeight = 0.30f;
+                         fighter->aiIdleWeight = 0.10f;
+                         fighter->aiDecisionMin = 0.18f;
+                         fighter->aiDecisionMax = 0.50f;
+                         fighter->aiApproachDistance = 1.10f;
+                         fighter->aiRetreatDistance = 0.85f;
+                         fighter->aiBlockChance = 0.60f;
+                         fighter->aiRecoveryChancePerFrame = 0.10f;
+                          break;
+                    }
                 }
 
                 auto* mr = entity->getComponent<our::MeshRendererComponent>();
