@@ -24,6 +24,8 @@ namespace our {
         int selectedCharacterIndex = 0;
         int currentOpponentIndex = 0;
         int currentRound = 1; // 1: Quarterfinals, 2: Semifinals, 3: Finals
+        glm::vec4 selectedArenaColor = glm::vec4(0.18f, 0.18f, 0.18f, 1.0f); // Default gray
+        bool arenaColorSelected = false; // Track if color has been selected once
 
         const std::vector<CharacterDef> characters = {
             {"Red Dragon",   "torso_red",    {0.8f, 0.1f, 0.1f, 1.0f}, 1.2f, 1.0f},
@@ -43,6 +45,7 @@ namespace our {
         void reset() {
             currentRound = 1;
             currentOpponentIndex = 0;
+            arenaColorSelected = false; // Reset color selection for new tournament
             // Note: Keep selectedCharacterIndex so they don't have to re-select if they just want to retry
         }
 

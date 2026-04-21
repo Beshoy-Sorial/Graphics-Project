@@ -197,6 +197,20 @@ class Playstate: public our::State {
                 }
             }
         }
+
+        // Apply the selected arena color to the ring
+        for (auto entity : world.getEntities()) {
+            if (entity->name == "Ring") {
+                auto* mr = entity->getComponent<our::MeshRendererComponent>();
+                if (mr) {
+                    auto* ringMaterial = dynamic_cast<our::TintedMaterial*>(mr->material);
+                    if (ringMaterial) {
+                        ringMaterial->tint = tm.selectedArenaColor;
+                    }
+                }
+                break;
+            }
+        }
     }
 
     void onDraw(double deltaTime) override {
