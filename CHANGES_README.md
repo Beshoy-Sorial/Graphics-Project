@@ -24,7 +24,7 @@ The `lit` shader implements the full Phong lighting model with 5 texture map typ
 | `BlueCornerLight` | **Point** | Cobalt `[0.04, 0.18, 1.0]` | Electric blue pool on AI's right side |
 | `GoldenBroadcastLeft` | **Directional** | Gold `[0.28, 0.22, 0.05]` diffuse | Warm specular glints from upper-left |
 | `AmberBroadcastRight` | **Directional** | Amber `[0.24, 0.18, 0.04]` diffuse | Warm specular glints from upper-right |
-| `PurpleMagentaRim` | **Directional** | Purple `[0.55, 0.04, 0.80]` | Dramatic silhouette rim on fighters' backs |
+| `PurpleMagentaRim` | **Directional** | Purple `[0.25, 0.01, 0.35]` | Dramatic silhouette rim on fighters' backs |
 | `CoolFrontalFill` | **Directional** | Teal `[0.18, 0.30, 0.50]` | Soft fill + sole ambient source; prevents black faces |
 
 **3 light types used:** Spot, Point, Directional. ✅
@@ -137,10 +137,6 @@ and the floor kept showing its default grass-under-yellow-lights appearance.
 
 ```glsl
 uniform vec3 material_tint;   // default white (1,1,1) = no change
-
-vec3 albedo = texture(material.albedo_tex, fs_in.tex_coord).rgb
-              * fs_in.color.rgb
-              * material_tint;   // ← arena colour applied here
 ```
 
 **`source/common/material/material.hpp`** — Added `tint` field to `LitMaterial`:
@@ -158,27 +154,7 @@ shader->set("material_tint", tint);
 **`source/states/play-state.hpp`** — Fixed the colour application:
 - Cast to `LitMaterial*` instead of `TintedMaterial*`
 - Apply to both `"Ring"` **and** `"Floor"` entities
-
-```cpp
-for (auto entity : world.getEntities()) {
-    if (entity->name == "Ring" || entity->name == "Floor") {
-        auto* mr = entity->getComponent<our::MeshRendererComponent>();
-        if (mr) {
-            auto* litMat = dynamic_cast<our::LitMaterial*>(mr->material);
-            if (litMat) {
-                litMat->tint = glm::vec3(tm.selectedArenaColor);
-            }
-        }
-    }
-}
-```
-
-### What you see now
-
-Selecting any colour in the "Select Arena Color" screen visibly tints both the ring canvas
-and the arena floor. Surface detail (grass pattern, ring canvas markings) remains visible
-but takes on the chosen hue. The tint is applied per-frame so it works correctly across
-all matches and after state transitions.
+- Only apply when `tm.arenaColorSelected == true` (prevents dark default)
 
 ---
 
@@ -247,53 +223,434 @@ if (!command.mesh || !command.material || !command.material->shader) continue;
 
 ---
 
-## Change 7 — Visual Fix: Audience + Arena Tint + Purple Rim
+## Change 7 — Visual Fix: Psychedelic Audience + Purple Rim
 
-### Problem A — Audience looked psychedelic (vivid pink/purple arms)
+### Problem — Audience looked psychedelic (vivid pink/purple arms)
 
-**Root cause:** All `torso_*` and `skin` materials were converted to `LitMaterial` (Phong).
-The ~450 audience body parts (150 spectators × 3 torso/arms) all responded to the
-`PurpleMagentaRim` directional light at diffuse `[0.55, 0.04, 0.80]`. Raised audience
-arms facing the light received full purple rim illumination → chaotic vivid colors.
+**Root cause:** All `torso_*` and `skin` materials were `LitMaterial` (Phong). The ~450
+audience body parts (150 spectators × 3 body segments) responded fully to `PurpleMagentaRim`
+directional light at diffuse `[0.55, 0.04, 0.80]`. Raised audience arms facing the light
+received full purple rim illumination → chaotic rainbow of vivid lit colors on crowd.
 
 **Fix — `config/app.jsonc`:**
-- Added 9 audience-specific tinted materials: `aud_red`, `aud_blue`, `aud_green`,
+- Added 9 audience-specific **tinted** materials: `aud_red`, `aud_blue`, `aud_green`,
   `aud_yellow`, `aud_purple`, `aud_cyan`, `aud_orange`, `aud_black`, `aud_skin`.
-  These use the flat `tinted` shader — no Phong calculations, no response to arena lights.
+  The `tinted` shader has no Phong calculations — crowd colors are flat and stable.
 - Reduced `PurpleMagentaRim` diffuse from `[0.55, 0.04, 0.80]` → `[0.25, 0.01, 0.35]`
   and specular from `[0.60, 0.08, 0.90]` → `[0.35, 0.05, 0.55]`. Still dramatic on
-  fighters, but not psychedelic.
+  fighters, no longer chaotic on crowd.
 
 **Fix — `source/states/play-state.hpp`:**
-- Audience torso/arm/leg materials changed from `torso_red` etc. → `aud_red` etc.
-- Audience head material changed from `skin` → `aud_skin`.
+- Audience torso/arm/leg materials changed: `torso_red` → `aud_red`, etc.
+- Audience head material changed: `skin` → `aud_skin`.
 
-### Problem B — Arena floor nearly black under dark tint (e.g. "Deep Blue")
+### Added — `skin_yellow` for stun flash
 
-**Root cause:** `material_tint` in `lit.frag` was multiplied directly into the albedo.
-`Deep Blue` = `glm::vec3(0.1, 0.2, 0.5)` → albedo multiplied by max component `0.5`
-→ floor rendered at ≤50% brightness. Very dark colours (anything with max < 0.3) made
-the floor nearly invisible.
+`skin_yellow` was never added when fighter materials moved to LitMaterial. The stun flash
+effect in player-controller returned `nullptr` from `AssetLoader`. Fixed by adding
+`skin_yellow` as a `LitMaterial` with `col_yellow` albedo in `config/app.jsonc`.
 
-**Fix — `assets/shaders/lit.frag`:** Added tint normalization before albedo multiply:
-```glsl
-vec3 tintCol = material_tint;
-float maxC = max(max(tintCol.r, tintCol.g), tintCol.b);
-if(maxC > 0.001) tintCol /= maxC;          // normalize hue to max = 1
-tintCol = mix(vec3(1.0), tintCol, 0.65);   // blend 65% hue + 35% white → never black
+---
+
+## Change 8 — Arena Floor Dark-Color Fix (luminance-recolor tint)
+
+### Root cause
+
+Selecting "Deep Blue" `[0.1, 0.2, 0.5]` or any dark arena color made the floor nearly
+black because `material_tint` was multiplied directly into the grass albedo:
+
 ```
-Now every color choice (Deep Blue, Dark Red, etc.) shows as a vivid visible tint instead
-of a dark near-black stain. Surface detail (grass, ring markings) remains readable.
+grass_albedo (dark green ≈ 0.15 avg) × [0.1, 0.2, 0.5] → nearly black
+```
 
-### Problem C — `skin_yellow` missing (stun flash broken)
+The grass texture is inherently dark, so any multiplication with a dim value destroys
+brightness. A simple normalization (divide by max component) was tried but still left the
+floor too dark because `mix(albedo, normalizedTint, 0.65)` was still a multiply-dominated
+operation on already-dark pixels.
 
-**Root cause:** `skin_yellow` was never added when fighter materials were converted to
-`LitMaterial`. The player-controller stun flash that swaps to `skin_yellow` returned
-`nullptr` from `AssetLoader`.
+### Fix — `assets/shaders/lit.frag` — Luminance-Preserving Recolor
 
-**Fix — `config/app.jsonc`:** Added `skin_yellow` as a `LitMaterial` using `col_yellow`
-albedo (already registered) and `spec_hi` / `rough_lo` for bright shiny appearance
-matching the stun effect intent.
+The approach changed from **multiplication** to **luminance-recolor**:
+
+```glsl
+vec3  tintRaw = material_tint;
+float maxC    = max(max(tintRaw.r, tintRaw.g), tintRaw.b);
+float minC    = min(min(tintRaw.r, tintRaw.g), tintRaw.b);
+// Saturation: 0 = grey/white (fighters), 1 = pure hue (arena selection)
+float sat     = (maxC > 0.001) ? (maxC - minC) / maxC : 0.0;
+// Normalize the tint to max-component = 1 (extracts pure hue, removes darkness)
+vec3  normHue = (maxC > 0.001) ? (tintRaw / maxC) : vec3(1.0);
+
+// Extract and boost the albedo luminance so dark textures still show the colour
+float lum        = dot(albedo_raw, vec3(0.2126, 0.7152, 0.0722));
+float boostedLum = clamp(lum * 2.5 + 0.25, 0.0, 1.0);
+vec3  recolored  = boostedLum * normHue;
+
+// Blend by saturation: white/grey tint → plain albedo; coloured tint → recolored
+float blendT = clamp(sat * 1.5, 0.0, 1.0);
+vec3  albedo = mix(albedo_raw, recolored, blendT);
+```
+
+**Also fixed — `source/states/play-state.hpp`:** Added `arenaColorSelected` guard so the
+default dark-gray `[0.18, 0.18, 0.18]` stored in `TournamentManager` before any colour is
+chosen never darkens the floor:
+
+```cpp
+if (tm.arenaColorSelected) {
+    // apply litMat->tint = glm::vec3(tm.selectedArenaColor);
+}
+```
+
+### How each arena color now looks
+
+| Arena Color | Raw value | Normalized hue | sat | Result on grass floor |
+|---|---|---|---|---|
+| **Deep Blue** | [0.1, 0.2, 0.5] | [0.2, 0.4, 1.0] | 0.80 | Vivid blue — clearly blue |
+| **Forest Green** | [0.1, 0.4, 0.1] | [0.25, 1.0, 0.25] | 0.75 | Vivid green |
+| **Dark Red** | [0.5, 0.1, 0.1] | [1.0, 0.2, 0.2] | 0.80 | Vivid red |
+| **Golden** | [0.7, 0.6, 0.1] | [1.0, 0.86, 0.14] | 0.86 | Warm gold |
+| **Purple** | [0.4, 0.1, 0.5] | [0.8, 0.2, 1.0] | 0.80 | Clear purple |
+| **Ocean Blue** | [0.1, 0.5, 0.7] | [0.14, 0.71, 1.0] | 0.86 | Vivid cyan-blue |
+| **White** | [0.9, 0.9, 0.9] | [1.0, 1.0, 1.0] | 0.0 | Natural albedo — no tint |
+| **Fighter (default)** | [1.0, 1.0, 1.0] | [1.0, 1.0, 1.0] | 0.0 | Plain albedo — no change |
+
+---
+
+# Lighting Workflow — How Each Feature Works
+
+This section explains the full data flow from the engine to the screen for every
+lighting-related feature in the game.
+
+---
+
+## Overview — The Rendering Pipeline
+
+```
+app.jsonc (scene definition)
+    │
+    ├── Light entities (7 lights) → LightComponent → light_common.glsl
+    ├── LitMaterial per mesh      → lit.vert + lit.frag
+    └── Postprocess pass          → warm-grade.frag
+```
+
+Each frame the `ForwardRenderer` does two passes:
+1. **Geometry pass** — draws every mesh with its material shader (lit, tinted, textured)
+2. **Postprocess pass** — runs `warm-grade.frag` on the framebuffer texture
+
+---
+
+## Stage 1 — Vertex Shader (`lit.vert`)
+
+**What it does:** Transforms each vertex from object space to screen space and prepares
+world-space data needed for per-fragment lighting calculations.
+
+```
+Input per vertex:
+  position  (location 0) — object-space XYZ
+  color     (location 1) — vertex color (typically white for OBJ meshes)
+  tex_coord (location 2) — UV for texture sampling
+  normal    (location 3) — object-space surface normal
+
+Uniforms from the renderer:
+  transform                    — MVP matrix (model × view × projection)
+  object_to_world              — model matrix (object → world space)
+  object_to_world_inv_transpose — inverse-transpose for correct normal transform
+
+Output to fragment shader:
+  world_position — used for: point/spot distance, specular view vector
+  world_normal   — used for: diffuse NdotL, specular reflection
+  tex_coord      — passed through for texture sampling
+  color          — passed through (vertex tint, usually white)
+```
+
+**Key operation — normal transform:**
+Normals cannot be transformed with the model matrix alone when the object is non-uniformly
+scaled. The inverse-transpose corrects the direction so normals stay perpendicular to the
+surface after scaling.
+
+---
+
+## Stage 2 — Fragment Shader (`lit.frag`)
+
+**What it does:** For each pixel, samples textures, applies the arena tint, then calls
+`calculateLighting()` with all 7 lights to produce the final lit color.
+
+### Step 2a — Texture sampling
+
+```glsl
+albedo_raw = texture(material.albedo_tex, tex_coord).rgb * vertex_color;
+specTex    = texture(material.specular_tex, tex_coord).rgb;
+ao         = texture(material.ambient_occlusion_tex, tex_coord).r;
+rough      = texture(material.roughness_tex, tex_coord).r;
+emissive   = texture(material.emissive_tex, tex_coord).rgb;
+```
+
+| Map | Default fallback | Role |
+|---|---|---|
+| albedo | 1×1 white | Base color of the surface |
+| specular | 1×1 mid-grey | How strongly highlights appear |
+| ambient_occlusion | 1×1 white | Darkens crevices; multiplies ambient term |
+| roughness | 1×1 mid-grey | Controls specular sharpness (`shininess`) |
+| emissive | 1×1 black | Self-glow (not affected by lights) |
+
+### Step 2b — Shininess from roughness
+
+```glsl
+shininess = 2.0 / pow(clamp(rough, 0.001, 0.999), 4.0) - 2.0;
+```
+
+Low roughness → very high shininess → tight sharp specular highlight (e.g. `spec_hi`).
+High roughness → low shininess → wide diffuse-like specular (e.g. `rough_mid`).
+
+### Step 2c — Arena colour tint (luminance-recolor)
+
+Applies only when a coloured arena is selected (`material_tint` ≠ white).
+
+```glsl
+sat     = (maxC - minC) / maxC        // tint saturation (0 = grey, 1 = pure hue)
+normHue = tintRaw / maxC              // extract hue (max component = 1)
+lum     = dot(albedo_raw, luma_weights) // brightness of the texture pixel
+boostedLum = clamp(lum * 2.5 + 0.25)  // amplified so dark textures stay visible
+recolored  = boostedLum * normHue      // texture pattern in the chosen hue
+albedo     = mix(albedo_raw, recolored, sat * 1.5)
+```
+
+Fighter materials always have `material_tint = [1,1,1]` (sat=0), so they are never affected.
+
+### Step 2d — `calculateLighting()` called once for all 7 lights
+
+Each light's contribution is accumulated: `result += lightContribution(...)`.
+
+---
+
+## Stage 3 — Light Calculations (`light_common.glsl`)
+
+### Phong lighting model — applied per light
+
+```
+total = ambient + diffuse + specular + emissive
+```
+
+| Term | Formula | Role |
+|---|---|---|
+| **Ambient** | `light.ambient * ao * albedo` | Constant fill; prevents pure-black shadows |
+| **Diffuse** | `light.diffuse * max(dot(N, L), 0) * albedo` | Lambertian; surface facing the light is bright |
+| **Specular** | `light.specular * specTex * pow(max(dot(R, V), 0), shininess)` | Phong highlight; shiny objects catch the light |
+| **Emissive** | `emissive` (added once, not per-light) | Self-illumination, unaffected by any light |
+
+Where:
+- `N` = normalized world normal
+- `L` = direction toward the light
+- `R` = reflection of `-L` around `N`
+- `V` = direction toward the camera
+
+---
+
+## Stage 4 — Per-Light Workflow (all 7 lights)
+
+### Light 1: CenterArenaSpot (Spot)
+
+**Purpose:** Overhead boxing spotlight — bright central beam on the ring.
+
+```
+Position: [0, 10, 0]   Rotation: [-90, 0, 0] → points straight down (-Y)
+
+Workflow per fragment:
+  1. fragToLight = normalize(light.position - world_position)
+  2. distance    = length(light.position - world_position)
+  3. attenuation = 1 / (constant + linear*d + quadratic*d²)
+                 = 1 / (1.0 + 0.022*d + 0.0019*d²)
+  4. spotAngle   = dot(-fragToLight, spotDirection)  ← cos of angle to beam center
+  5. spotFactor  = smoothstep(cos(outer=36°), cos(inner=20°), spotAngle)
+                   → 1.0 inside inner cone, 0.0 outside outer cone, smooth edge
+  6. contribution = (ambient + diffuse*NdotL + specular) * attenuation * spotFactor
+```
+
+**What you see:** A warm-white oval pool of light on the ring canvas that fades at the
+edges. Fighters standing in the center get a dramatic top-light; fighters near the ropes
+are dimmer and more shadowed.
+
+---
+
+### Lights 2 & 3: RedCornerLight + BlueCornerLight (Point)
+
+**Purpose:** Colored corner floodlights — red on the player's side, blue on the AI's side.
+
+```
+RedCorner:  Position [-4.5, 5.5, 0]   diffuse [1.0, 0.04, 0.04]
+BlueCorner: Position [ 4.5, 5.5, 0]   diffuse [0.04, 0.18, 1.0]
+
+Workflow per fragment:
+  1. L           = normalize(light.position - world_position)
+  2. distance    = length(light.position - world_position)
+  3. attenuation = 1 / (1.0 + 0.09*d + 0.032*d²)   ← moderate falloff
+  4. contribution = (diffuse * NdotL + specular) * attenuation
+     (ambient = 0 — color only appears near the corner, not globally)
+```
+
+**What you see:** The player's torso/head are bathed in scarlet from the left; the AI's
+side glows cobalt blue. The ring ropes and floor near each corner pick up the corresponding
+color. Fighters near the center see both colors mixing.
+
+---
+
+### Lights 4 & 5: GoldenBroadcastLeft + AmberBroadcastRight (Directional)
+
+**Purpose:** Simulated broadcast TV lights from upper-left and upper-right — strong specular
+glints on shiny surfaces, very low diffuse so the floor color is not overwhelmed.
+
+```
+GoldenLeft:  Rotation [-30, 45, 0]   diffuse [0.28, 0.22, 0.05]  specular [0.55, 0.45, 0.15]
+AmberRight:  Rotation [-30,-45, 0]   diffuse [0.24, 0.18, 0.04]  specular [0.50, 0.38, 0.12]
+Both: ambient = [0, 0, 0]
+
+Workflow per fragment (directional — no position, no attenuation):
+  1. L = -normalize(lightDirection)   ← constant across the entire scene
+  2. diffuse contribution  = light.diffuse  * max(NdotL, 0) * albedo
+  3. R = reflect(-L, N)
+  4. specular contribution = light.specular * specTex * pow(max(dot(R,V),0), shininess)
+  5. total = diffuse + specular   (no ambient from these lights)
+```
+
+**What you see:** Shiny parts of the ring canvas and fighter gloves catch bright golden
+specular flashes depending on the camera angle. The effect is subtle in diffuse but visible
+as glinting highlights, adding to the broadcast-TV aesthetic.
+
+---
+
+### Light 6: PurpleMagentaRim (Directional)
+
+**Purpose:** Dramatic back-rim light — violet silhouette on fighters' backs and the far edge
+of the ring, like colored stage lighting behind the fighters.
+
+```
+Rotation: [20, 180, 0] → light comes FROM behind the fighters (faces -Z)
+diffuse:  [0.25, 0.01, 0.35]   specular: [0.35, 0.05, 0.55]   ambient: [0, 0, 0]
+
+Workflow per fragment:
+  1. L = direction facing TOWARD the camera (opposite to fighters' forward)
+  2. NdotL = dot(N, L)  — positive only for back-facing normals
+     Back of fighter torso → NdotL ≈ 0.8 → strong rim
+     Front of fighter torso → NdotL ≈ 0.0 → no contribution
+  3. contribution = light.diffuse * max(NdotL, 0) * albedo
+                  + light.specular * specTex * pow(max(dot(R,V),0), shininess)
+```
+
+**What you see:** The backs of both fighters glow violet, separating them from the
+background. The ring ropes behind the fighters catch purple specular highlights. Zero ambient
+means it only appears on surfaces truly facing away — no purple spill onto the front.
+
+---
+
+### Light 7: CoolFrontalFill (Directional)
+
+**Purpose:** The only ambient light source. Soft teal fill from the front prevents any
+surface from going completely black. Contrasts the warm golds/ambers.
+
+```
+Rotation: [-8, 0, 0]   diffuse [0.18, 0.30, 0.50]   specular [0, 0, 0]
+ambient: [0.10, 0.12, 0.14]   ← THE ONLY LIGHT WITH AMBIENT
+
+Workflow per fragment:
+  Ambient term (added regardless of surface angle):
+    ambient = light.ambient * ao * albedo
+            = [0.10, 0.12, 0.14] * ao * albedo
+    → gives every surface a minimum cool-teal brightness
+    → ao (ambient occlusion) darkens crevices that should be shadowed
+
+  Diffuse term (directional fill from front):
+    L = normalize(-lightDirection)  ← points toward camera-forward direction
+    diffuse = [0.18, 0.30, 0.50] * max(dot(N, L), 0) * albedo
+    → front-facing surfaces get a teal-blue fill
+    → back-facing surfaces get 0 from this light (covered by PurpleMagentaRim)
+```
+
+**What you see:** Faces and front torsos are always visible with a cool blue-teal base.
+No completely black surfaces exist anywhere in the scene. The cool teal creates a color
+contrast against the warm golden/amber broadcast lights, giving the lighting a professional
+dual-temperature look.
+
+---
+
+## Stage 5 — Postprocessing (`warm-grade.frag`)
+
+**What it does:** Full-screen pass over the rendered framebuffer — 3 operations in one shader.
+
+```
+Input: rendered scene texture (all 7 lights already calculated)
+Output: final screen image
+```
+
+### Operation 1 — Warm Color Grade
+
+```glsl
+frag_color.r = min(frag_color.r * 1.10, 1.0);  // +10% red → warmer
+frag_color.g = min(frag_color.g * 1.02, 1.0);  // +2%  green → slight warmth
+frag_color.b =     frag_color.b * 0.88;         // -12% blue  → reduces coldness
+```
+
+Pushes the entire frame toward gold/amber. Even the blue corner light and teal fill appear
+slightly warmer through this grade. Gives the game a "fight night broadcast" feel.
+
+### Operation 2 — Contrast Boost
+
+```glsl
+frag_color.rgb = (frag_color.rgb - 0.5) * 1.12 + 0.5;
+```
+
+Standard contrast stretch centered at 0.5. Dark areas get darker, bright areas get brighter.
+Amplifies the separation between the lit ring and the shadowed audience.
+
+### Operation 3 — Vignette
+
+```glsl
+vec2 ndc = tex_coord * 2.0 - 1.0;           // [0,1] UV → [-1,1] NDC
+frag_color.rgb /= 1.0 + dot(ndc, ndc) * 0.75;
+```
+
+`dot(ndc, ndc)` = squared distance from screen center (0 at center, ~2 at corners).
+Dividing by `1 + distance²×0.75` darkens the corners without hard edges. Keeps the
+viewer's eye focused on the center of the ring.
+
+---
+
+## Full Lighting Feature Map
+
+```
+Every frame, for each LitMaterial mesh pixel:
+
+  albedo_raw = sample(albedo_tex) × vertex_color
+  albedo     = luminance_recolor(albedo_raw, material_tint)  ← arena tint
+
+  FOR each of 7 lights:
+    L = direction to light
+    NdotL = dot(N, L)
+
+    ┌─ Directional (GoldenLeft, AmberRight, PurpleRim, CoolFill)
+    │   No distance, no attenuation
+    │   L is constant across the scene
+    │
+    ├─ Point (RedCorner, BlueCorner)
+    │   L = normalize(lightPos - fragPos)
+    │   attenuation = 1/(c + l*d + q*d²)
+    │
+    └─ Spot (CenterArenaSpot)
+        L = normalize(lightPos - fragPos)
+        attenuation = 1/(c + l*d + q*d²)
+        spotFactor  = smoothstep(outerCone, innerCone, dot(-L, spotDir))
+
+    contribution = ambient×ao×albedo          (CoolFill only — all others: ambient=0)
+                 + diffuse×NdotL×albedo
+                 + specular×specTex×pow(RdotV, shininess)
+                 × attenuation × spotFactor
+
+  pixel = sum(contributions) + emissive
+
+  ─── postprocess pass ────────────────────────────────────────
+  pixel = warmGrade(pixel)     r×1.10, g×1.02, b×0.88
+  pixel = contrast(pixel)      (p - 0.5) × 1.12 + 0.5
+  pixel /= 1 + dist²×0.75     vignette
+```
 
 ---
 
@@ -319,12 +676,57 @@ matching the stun effect intent.
 
 | File | Change |
 |---|---|
-| `config/app.jsonc` | 7 lights (3 types), all materials → lit, audience tinted materials, `skin_yellow`, purple rim reduced |
-| `assets/shaders/postprocess/warm-grade.frag` | **New** — Phase 2 postprocess effect |
-| `assets/shaders/lit.frag` | Tint normalization (hue max=1, 65% blend); `material_tint` uniform for arena colour |
+| `config/app.jsonc` | 7 lights (3 types), all fighter materials → lit, audience tinted materials, `skin_yellow`, purple rim reduced |
+| `assets/shaders/postprocess/warm-grade.frag` | **New** — Phase 2 postprocess: warm grade + contrast + vignette |
+| `assets/shaders/lit.frag` | **Two-axis tint**: hue recolor (saturated) + brightness remap (grey/white); fixes white/grey arena colors |
 | `source/common/asset-loader.cpp` | Extended Texture2D loader with `color:R,G,B,A` inline format |
 | `source/common/material/material.hpp` | Added `tint` field to `LitMaterial` |
 | `source/common/material/material.cpp` | `LitMaterial::setup()` sends `material_tint`; null-shader guard in `Material::setup()` |
 | `source/common/systems/forward-renderer.cpp` | Null-shader guard added to render loop skip condition |
 | `source/common/systems/player-controller.hpp` | `resetCache()` method; `resultTimer` moved from static local to member variable |
-| `source/states/play-state.hpp` | `resetCache()`, arena tint fix, audience now uses `aud_*` tinted materials |
+| `source/states/play-state.hpp` | `resetCache()`, `arenaColorSelected` guard, arena tint via `LitMaterial*`, audience uses `aud_*` tinted materials |
+
+---
+
+## Change 9 — White / Dark-Grey Arena Color Showed Yellow (shader tint bug)
+
+### Root cause
+
+The tint shader used **saturation** as the sole blend weight:
+
+```glsl
+float sat    = (maxC - minC) / maxC;
+float blendT = clamp(sat * 1.5, 0.0, 1.0);
+vec3  albedo = mix(albedo_raw, recolored, blendT);
+```
+
+White `[0.9, 0.9, 0.9]` and dark grey `[0.18, 0.18, 0.18]` both have **sat = 0**
+(equal R/G/B), so `blendT = 0` and `mix` returned `albedo_raw` unchanged.
+The orange ring.png texture showed through regardless of which color was chosen.
+
+### Fix — `assets/shaders/lit.frag` — Two-axis blend
+
+Added a **brightness-remap axis** that activates for achromatic (grey/white) tints:
+
+```glsl
+float targetGrey = (tintRaw.r + tintRaw.g + tintRaw.b) / 3.0;
+
+// Weight = 0 when tint=(1,1,1) (fighters stay unchanged)
+// Weight is strong for dark-grey or near-white arena selections
+float greyWeight = clamp((1.0 - sat) * abs(1.0 - targetGrey) * 5.0, 0.0, 1.0);
+vec3  greyAlbedo = vec3(clamp(lum + targetGrey - 0.5, 0.0, 1.0));
+
+float hueWeight = clamp(sat * 1.5, 0.0, 1.0);
+vec3  tinted    = mix(albedo_raw, recolored,  hueWeight);
+vec3  albedo    = mix(tinted,     greyAlbedo, greyWeight);
+```
+
+### How each case now works
+
+| Arena color | tint value | sat | greyWeight | hueWeight | Result |
+|---|---|---|---|---|---|
+| **Default / fighters** | `[1.0, 1.0, 1.0]` | 0 | **0** | 0 | Unchanged — natural albedo ✓ |
+| **White** | `[0.9, 0.9, 0.9]` | 0 | **~0.5** | 0 | Canvas brightens toward near-white ✓ |
+| **Dark Grey** | `[0.18, 0.18, 0.18]` | 0 | **~0.9** | 0 | Canvas goes dark grey ✓ |
+| **Deep Blue** | `[0.1, 0.2, 0.5]` | 0.80 | ~0.1 | 1.0 | Vivid blue recolor (hue axis) ✓ |
+| **Red** | `[0.8, 0.1, 0.1]` | 0.875 | ~0.05 | 1.0 | Vivid red (hue axis) ✓ |
