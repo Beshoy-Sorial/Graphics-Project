@@ -132,71 +132,131 @@
 
     "world": [
       // ═══════════════════════════════════════════════════════════════════
-      // LIGHTS — 4 lights total, 2 types (directional + point)
+      // LIGHTS — 7 lights, 3 types (spot + point + directional)
+      // "Fight Night" cinematic arena lighting
       // ═══════════════════════════════════════════════════════════════════
 
-      // 1. Main arena overhead light — warm white directional (sun-like).
-      //    rotation [-45,20,0]: pitch=-45 makes -Z point downward at 45°;
-      //    yaw=20 gives a slight left-to-right angle for natural shading.
-      //    Provides ambient base + warm diffuse across the whole ring.
+      // 1. CENTER ARENA SPOTLIGHT — the iconic boxing-match overhead beam.
+      //    Spot light pointing straight down (rotation [-90,0,0]).
+      //    Creates a bright oval of white light on the ring canvas center
+      //    with a soft penumbra fading to the coloured corner lights.
+      //    attenuation tuned so the beam reaches the ring (~10 units down)
+      //    without washing out the canvas texture.
       {
-        "name": "MainArenaLight",
-        "rotation": [-45, 20, 0],
+        "name": "CenterArenaSpot",
+        "position": [0.0, 10.0, 0.0],
+        "rotation": [-90, 0, 0],
+        "components": [{
+          "type": "Light",
+          "lightType": "spot",
+          "diffuse":  [1.0, 0.97, 0.90],
+          "specular": [1.0, 0.97, 0.90],
+          "ambient":  [0.10, 0.09, 0.07],
+          "attenuationConstant":  1.0,
+          "attenuationLinear":    0.022,
+          "attenuationQuadratic": 0.0019,
+          "innerConeAngle": 20.0,
+          "outerConeAngle": 36.0
+        }]
+      },
+
+      // 2. RED CORNER — vivid scarlet point on the player's left side.
+      //    Placed higher and closer than before; stronger attenuation so the
+      //    colour pool stays sharp on the floor and ring canvas edge.
+      {
+        "name": "RedCornerLight",
+        "position": [-4.5, 5.5, 0.0],
+        "components": [{
+          "type": "Light",
+          "lightType": "point",
+          "diffuse":  [1.0, 0.04, 0.04],
+          "specular": [1.0, 0.25, 0.25],
+          "ambient":  [0.0, 0.0, 0.0],
+          "attenuationConstant":  1.0,
+          "attenuationLinear":    0.09,
+          "attenuationQuadratic": 0.032
+        }]
+      },
+
+      // 3. BLUE CORNER — electric cobalt point on the AI's right side.
+      //    Same placement strategy as the red corner for symmetry.
+      {
+        "name": "BlueCornerLight",
+        "position": [4.5, 5.5, 0.0],
+        "components": [{
+          "type": "Light",
+          "lightType": "point",
+          "diffuse":  [0.04, 0.18, 1.0],
+          "specular": [0.25, 0.40, 1.0],
+          "ambient":  [0.0, 0.0, 0.0],
+          "attenuationConstant":  1.0,
+          "attenuationLinear":    0.09,
+          "attenuationQuadratic": 0.032
+        }]
+      },
+
+      // 4. GOLDEN BROADCAST LEFT — warm rich-gold directional from upper-left.
+      //    Simulates the stadium TV-broadcast floods every boxing venue uses.
+      //    rotation [-30,45,0]: pitch=-30° (angled down), yaw=+45° (from left).
+      //    Creates golden specular glints on the ring canvas and fighters' skin.
+      {
+        "name": "GoldenBroadcastLeft",
+        "rotation": [-30, 45, 0],
         "components": [{
           "type": "Light",
           "lightType": "directional",
-          "diffuse":  [1.0, 0.92, 0.80],
-          "specular": [1.0, 0.92, 0.80],
-          "ambient":  [0.14, 0.11, 0.08]
+          "diffuse":  [1.0, 0.78, 0.18],
+          "specular": [1.0, 0.85, 0.35],
+          "ambient":  [0.08, 0.062, 0.014]
         }]
       },
 
-      // 2. Red corner spotlight — point light on the player's side.
-      //    Tints the floor/ring canvas red on the left, matching the
-      //    player's corner colour.
+      // 5. AMBER BROADCAST RIGHT — slightly warmer amber from upper-right.
+      //    Offsets the golden left light to avoid flat-lit look; the slight
+      //    hue difference creates interesting cross-shadows on the canvas.
+      //    rotation [-30,-45,0]: same pitch, mirrored yaw.
       {
-        "name": "RedCornerLight",
-        "position": [-3.5, 4.0, 0.0],
+        "name": "AmberBroadcastRight",
+        "rotation": [-30, -45, 0],
         "components": [{
           "type": "Light",
-          "lightType": "point",
-          "diffuse":  [1.0, 0.15, 0.15],
-          "specular": [1.0, 0.35, 0.35],
-          "ambient":  [0.0, 0.0, 0.0],
-          "attenuationConstant":  1.0,
-          "attenuationLinear":    0.14,
-          "attenuationQuadratic": 0.07
+          "lightType": "directional",
+          "diffuse":  [0.95, 0.65, 0.12],
+          "specular": [0.95, 0.72, 0.28],
+          "ambient":  [0.07, 0.050, 0.010]
         }]
       },
 
-      // 3. Blue corner spotlight — point light on the AI's side.
-      //    Tints the floor/ring canvas blue on the right.
+      // 6. PURPLE MAGENTA RIM — vivid violet from directly behind the ring.
+      //    rotation [20,180,0]: yaw=180 flips -Z to +Z (from behind),
+      //    pitch=+20 tilts upward slightly so it catches the tops of fighters.
+      //    Creates dramatic silhouette highlights on backs and shoulders —
+      //    the most visually distinctive light in the setup.
       {
-        "name": "BlueCornerLight",
-        "position": [3.5, 4.0, 0.0],
-        "components": [{
-          "type": "Light",
-          "lightType": "point",
-          "diffuse":  [0.15, 0.35, 1.0],
-          "specular": [0.35, 0.55, 1.0],
-          "ambient":  [0.0, 0.0, 0.0],
-          "attenuationConstant":  1.0,
-          "attenuationLinear":    0.14,
-          "attenuationQuadratic": 0.07
-        }]
-      },
-
-      // 4. Soft back fill light — cool directional from behind/below.
-      //    Prevents the back side of the ring from going completely black.
-      {
-        "name": "FillLight",
+        "name": "PurpleMagentaRim",
         "rotation": [20, 180, 0],
         "components": [{
           "type": "Light",
           "lightType": "directional",
-          "diffuse":  [0.25, 0.30, 0.50],
-          "specular": [0.0, 0.0, 0.0],
-          "ambient":  [0.04, 0.04, 0.07]
+          "diffuse":  [0.65, 0.05, 0.95],
+          "specular": [0.70, 0.10, 1.0],
+          "ambient":  [0.016, 0.0, 0.024]
+        }]
+      },
+
+      // 7. COOL FRONTAL FILL — soft teal-blue from the camera direction.
+      //    Prevents faces from going pure black; adds a cool cinematic
+      //    contrast against the warm gold broadcast lights.
+      //    rotation [-8,0,0]: very shallow pitch so it hits faces directly.
+      {
+        "name": "CoolFrontalFill",
+        "rotation": [-8, 0, 0],
+        "components": [{
+          "type": "Light",
+          "lightType": "directional",
+          "diffuse":  [0.18, 0.32, 0.55],
+          "specular": [0.0,  0.0,  0.0],
+          "ambient":  [0.04, 0.05, 0.09]
         }]
       },
 

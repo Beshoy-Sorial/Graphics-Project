@@ -48,42 +48,54 @@ These are used as texture map inputs for the lit materials below.
 Fighter and referee body materials remain `tinted` (flat color) since no fighter skin texture
 maps are available — this is correct and intentional.
 
-#### 4 light entities added to the world
+#### 7 light entities added to the world — "Fight Night" cinematic setup
 
 | Name | Type | Position / Rotation | Color | Purpose |
 |---|---|---|---|---|
-| `MainArenaLight` | **Directional** | rotation `[-45, 20, 0]` | Warm white `[1.0, 0.92, 0.80]` | Primary overhead arena light |
-| `RedCornerLight` | **Point** | `[-3.5, 4.0, 0.0]` | Red `[1.0, 0.15, 0.15]` | Player's corner atmosphere |
-| `BlueCornerLight` | **Point** | `[3.5, 4.0, 0.0]` | Blue `[0.15, 0.35, 1.0]` | AI's corner atmosphere |
-| `FillLight` | **Directional** | rotation `[20, 180, 0]` | Cool blue `[0.25, 0.30, 0.50]` | Prevents total darkness on back faces |
+| `CenterArenaSpot` | **Spot** | pos `[0, 10, 0]`, rot `[-90,0,0]` | Near-white `[1.0, 0.97, 0.90]` | Classic boxing-match overhead beam with penumbra |
+| `RedCornerLight` | **Point** | `[-4.5, 5.5, 0.0]` | Scarlet `[1.0, 0.04, 0.04]` | Vivid red pool on player's side (much stronger than before) |
+| `BlueCornerLight` | **Point** | `[4.5, 5.5, 0.0]` | Cobalt `[0.04, 0.18, 1.0]` | Electric blue pool on AI's side |
+| `GoldenBroadcastLeft` | **Directional** | rotation `[-30, 45, 0]` | Rich gold `[1.0, 0.78, 0.18]` | TV-broadcast flood from upper-left |
+| `AmberBroadcastRight` | **Directional** | rotation `[-30, -45, 0]` | Amber `[0.95, 0.65, 0.12]` | TV-broadcast flood from upper-right (creates cross-shadows) |
+| `PurpleMagentaRim` | **Directional** | rotation `[20, 180, 0]` | Vivid purple `[0.65, 0.05, 0.95]` | Dramatic rim/silhouette light from behind |
+| `CoolFrontalFill` | **Directional** | rotation `[-8, 0, 0]` | Teal `[0.18, 0.32, 0.55]` | Soft cool fill from camera direction; prevents black faces |
 
-This gives **2 light types** (directional + point) and **4 total lights** — both clearly exceed
-the "multiple lights, one type is enough" requirement.
+This gives **3 light types** (spot + point + directional) and **7 total lights**.
 
 ---
 
 ### What you will see in-game
 
+**Center of the ring:**
+- A crisp **white oval spotlight** on the canvas center with a soft gradient edge (spot light penumbra).
+  The canvas texture glints inside the beam. Fighters standing in center are brightly lit.
+
 **Ring canvas (`ring_mat`):**
-- Shows the `ring.png` texture with **Phong shading** — highlights and shadows follow the
-  surface normal correctly
-- The warm directional light adds a golden sheen to the center
-- The red corner light tints the left side of the canvas red
-- The blue corner light tints the right side blue
-- Specular highlights (from `wood.jpg` specular map) make the canvas surface glint
+- **Golden cross-shading** from two broadcast directionals at ±45° — specular glints visible
+  from the `wood.jpg` specular map; the cross-angle creates interesting highlight variation
+- **Vivid red left edge** — left side of canvas lit deep scarlet
+- **Vivid blue right edge** — right side lit electric cobalt
+- **Purple rim** on the far edge of the canvas (back of ring) from the rim light
+- The white spot beam brightens the center — clear gradient from white center → coloured edges
 
 **Arena floor (`floor_mat`):**
-- Shows the `grass_ground_d.jpg` texture lit by all 4 lights
-- A clear **red gradient** is visible on the left half (from the red corner point light)
-- A clear **blue gradient** is visible on the right half (from the blue corner point light)
-- The overhead directional light provides warm overall illumination
-- The AO map (`moon.jpg`) subtly darkens occluded areas
-- The roughness map (`moon.jpg`) controls how sharp the specular highlights are
+- **Bright scarlet pool** on the left half — much more vivid and concentrated than before
+- **Electric blue pool** on the right half — equally vivid
+- **Golden warmth** from the two broadcast lights creates a rich warm-amber base tone
+- Floor center receives the tail of the spot beam, adding a subtle bright oval
+- AO and roughness maps create surface detail variation under all 7 lights
 
-**Lighting summary visible in the match:**
-- Two colored zones on the floor: red (player side) and blue (AI side)
-- Ring canvas has natural shading — not flat like before
-- The back fill light ensures no surfaces go completely black
+**Fighters (skin tinted materials):**
+- **Warm gold** on faces from the broadcast lights (classic TV look)
+- **Purple highlight** on backs and shoulders from the rim light — creates a dramatic silhouette
+- Standing in your red corner: clear red tint on one side, purple outline on the back
+- Standing in the blue corner: electric blue tint on one side, purple outline
+- Moving to ring center: the spot beam creates a bright overhead highlight on the head/shoulders
+
+**Overall atmosphere:**
+- High contrast — bright spot center fades to vivid coloured edges
+- Warm golden palette from the broadcast lights, cut with cool teal fill on faces
+- The purple rim is the most eye-catching addition — impossible to miss even from the default camera angle
 
 ---
 
@@ -143,7 +155,7 @@ to:
 |---|---|
 | Enemy / obstacle (AI fighter) | ✅ Was already met |
 | 3D models | ✅ Was already met |
-| **Lighting with multiple lights** | ✅ **Fixed — 4 lights (directional + point), 2 types** |
+| **Lighting with multiple lights** | ✅ **Fixed — 7 lights (spot + point + directional), 3 types, cinematic "Fight Night" setup** |
 | **Lit material texture types (albedo, specular, roughness, AO)** | ✅ **Fixed — ring and floor use `lit` with 3 texture maps each** |
 | Sky | ✅ Was already met |
 | **New postprocessing effect (not Phase 1)** | ✅ **Fixed — `warm-grade.frag` (color grade + vignette combined)** |
