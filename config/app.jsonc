@@ -8,7 +8,8 @@
   "scene": {
     "renderer": {
       "sky": "assets/textures/sky.jpg",
-      "postprocess": "assets/shaders/postprocess/vignette.frag"
+      // warm-grade.frag is a Phase-2 postprocess: warm color grade + vignette combined
+      "postprocess": "assets/shaders/postprocess/warm-grade.frag"
     },
     "assets": {
       "shaders": {
@@ -19,145 +20,189 @@
         "textured": {
           "vs": "assets/shaders/textured.vert",
           "fs": "assets/shaders/textured.frag"
+        },
+        // Phong lighting shader — used by ring canvas and floor (lit materials)
+        "lit": {
+          "vs": "assets/shaders/lit.vert",
+          "fs": "assets/shaders/lit.frag"
         }
       },
       "samplers": { "default": {} },
       "textures": {
-        "ring": "assets/textures/ring.png"
+        "ring":  "assets/textures/ring.png",
+        // Additional textures used by the lit materials
+        "grass": "assets/textures/grass_ground_d.jpg",
+        "moon":  "assets/textures/moon.jpg",
+        "wood":  "assets/textures/wood.jpg"
       },
       "meshes": {
-        "torso": "assets/models/torso.obj",
-        "head": "assets/models/head.obj",
-        "left_arm": "assets/models/left_arm.obj",
+        "torso":     "assets/models/torso.obj",
+        "head":      "assets/models/head.obj",
+        "left_arm":  "assets/models/left_arm.obj",
         "right_arm": "assets/models/right_arm.obj",
-        "left_leg": "assets/models/left_leg.obj",
+        "left_leg":  "assets/models/left_leg.obj",
         "right_leg": "assets/models/right_leg.obj",
-        "ring": "assets/models/ring.obj",
-        "plane": "assets/models/plane.obj"
+        "ring":      "assets/models/ring.obj",
+        "plane":     "assets/models/plane.obj"
       },
       "materials": {
+        // ── Fighter / referee body materials (tinted — flat color) ──────────
         "skin": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.95, 0.78, 0.65, 1.0]
         },
         "skin_yellow": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [1.0, 0.9, 0.0, 1.0]
         },
         "torso_red": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.85, 0.15, 0.15, 1.0]
         },
         "torso_blue": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.15, 0.35, 0.85, 1.0]
         },
         "torso_white": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.9, 0.9, 0.9, 1.0]
         },
-        "ring_mat": {
-          "type": "textured",
-          "shader": "textured",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
-          "tint": [1.0, 1.0, 1.0, 1.0],
-          "texture": "ring",
-          "sampler": "default"
-        },
-        "floor_mat": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
-          "tint": [0.18, 0.18, 0.18, 1.0]
-        },
         "torso_green": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.1, 0.7, 0.1, 1.0]
         },
         "torso_yellow": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.8, 0.7, 0.1, 1.0]
         },
         "torso_purple": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.5, 0.1, 0.7, 1.0]
         },
         "torso_cyan": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.1, 0.7, 0.8, 1.0]
         },
         "torso_orange": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.9, 0.5, 0.1, 1.0]
         },
         "torso_black": {
-          "type": "tinted",
-          "shader": "tinted",
-          "pipelineState": {
-            "faceCulling": { "enabled": false },
-            "depthTesting": { "enabled": true }
-          },
+          "type": "tinted", "shader": "tinted",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
           "tint": [0.2, 0.2, 0.2, 1.0]
+        },
+
+        // ── Environment materials (lit — full Phong with texture maps) ───────
+        // Ring canvas: albedo=ring.png, specular=wood.jpg, roughness=moon.jpg
+        // Lights will cast warm/red/blue highlights on the canvas surface.
+        "ring_mat": {
+          "type": "lit",
+          "shader": "lit",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
+          "albedo_map":    "ring",
+          "specular_map":  "wood",
+          "roughness_map": "moon",
+          "sampler": "default"
+        },
+
+        // Arena floor: albedo=grass, roughness=moon, AO=moon
+        // The directional and corner lights cast colored gradients across the floor.
+        "floor_mat": {
+          "type": "lit",
+          "shader": "lit",
+          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
+          "albedo_map":            "grass",
+          "roughness_map":         "moon",
+          "ambient_occlusion_map": "moon",
+          "sampler": "default"
         }
       }
     },
+
     "world": [
+      // ═══════════════════════════════════════════════════════════════════
+      // LIGHTS — 4 lights total, 2 types (directional + point)
+      // ═══════════════════════════════════════════════════════════════════
+
+      // 1. Main arena overhead light — warm white directional (sun-like).
+      //    rotation [-45,20,0]: pitch=-45 makes -Z point downward at 45°;
+      //    yaw=20 gives a slight left-to-right angle for natural shading.
+      //    Provides ambient base + warm diffuse across the whole ring.
+      {
+        "name": "MainArenaLight",
+        "rotation": [-45, 20, 0],
+        "components": [{
+          "type": "Light",
+          "lightType": "directional",
+          "diffuse":  [1.0, 0.92, 0.80],
+          "specular": [1.0, 0.92, 0.80],
+          "ambient":  [0.14, 0.11, 0.08]
+        }]
+      },
+
+      // 2. Red corner spotlight — point light on the player's side.
+      //    Tints the floor/ring canvas red on the left, matching the
+      //    player's corner colour.
+      {
+        "name": "RedCornerLight",
+        "position": [-3.5, 4.0, 0.0],
+        "components": [{
+          "type": "Light",
+          "lightType": "point",
+          "diffuse":  [1.0, 0.15, 0.15],
+          "specular": [1.0, 0.35, 0.35],
+          "ambient":  [0.0, 0.0, 0.0],
+          "attenuationConstant":  1.0,
+          "attenuationLinear":    0.14,
+          "attenuationQuadratic": 0.07
+        }]
+      },
+
+      // 3. Blue corner spotlight — point light on the AI's side.
+      //    Tints the floor/ring canvas blue on the right.
+      {
+        "name": "BlueCornerLight",
+        "position": [3.5, 4.0, 0.0],
+        "components": [{
+          "type": "Light",
+          "lightType": "point",
+          "diffuse":  [0.15, 0.35, 1.0],
+          "specular": [0.35, 0.55, 1.0],
+          "ambient":  [0.0, 0.0, 0.0],
+          "attenuationConstant":  1.0,
+          "attenuationLinear":    0.14,
+          "attenuationQuadratic": 0.07
+        }]
+      },
+
+      // 4. Soft back fill light — cool directional from behind/below.
+      //    Prevents the back side of the ring from going completely black.
+      {
+        "name": "FillLight",
+        "rotation": [20, 180, 0],
+        "components": [{
+          "type": "Light",
+          "lightType": "directional",
+          "diffuse":  [0.25, 0.30, 0.50],
+          "specular": [0.0, 0.0, 0.0],
+          "ambient":  [0.04, 0.04, 0.07]
+        }]
+      },
+
+      // ═══════════════════════════════════════════════════════════════════
+      // CAMERA
+      // ═══════════════════════════════════════════════════════════════════
       {
         "name": "Camera",
         "position": [0.0, 1.5, 6.0],
@@ -167,6 +212,10 @@
           { "type": "Free Camera Controller" }
         ]
       },
+
+      // ═══════════════════════════════════════════════════════════════════
+      // ENVIRONMENT (lit materials — responds to all 4 lights above)
+      // ═══════════════════════════════════════════════════════════════════
       {
         "name": "Ring",
         "position": [0, 0, 0],
@@ -184,6 +233,10 @@
           { "type": "Mesh Renderer", "mesh": "plane", "material": "floor_mat" }
         ]
       },
+
+      // ═══════════════════════════════════════════════════════════════════
+      // FIGHTERS (tinted materials — flat colour, no light interaction)
+      // ═══════════════════════════════════════════════════════════════════
       {
         "name": "Player_Torso",
         "position": [-1.3, 1.5, 0.0],
@@ -206,40 +259,28 @@
           {
             "name": "Player_Left_Shoulder",
             "position": [0.6, 1.0, 0.0],
-            "children": [
-              {
-                "name": "Player_Left_Arm",
-                "position": [-0.223, -1.792, -0.216],
-                "rotation": [0, 0, 0],
-                "scale": [0.074, 0.074, 0.074],
-                "components": [
-                  {
-                    "type": "Mesh Renderer",
-                    "mesh": "left_arm",
-                    "material": "skin"
-                  }
-                ]
-              }
-            ]
+            "children": [{
+              "name": "Player_Left_Arm",
+              "position": [-0.223, -1.792, -0.216],
+              "rotation": [0, 0, 0],
+              "scale": [0.074, 0.074, 0.074],
+              "components": [
+                { "type": "Mesh Renderer", "mesh": "left_arm", "material": "skin" }
+              ]
+            }]
           },
           {
             "name": "Player_Right_Shoulder",
             "position": [-0.6, 1.0, 0.0],
-            "children": [
-              {
-                "name": "Player_Right_Arm",
-                "position": [0.223, -1.792, -0.216],
-                "rotation": [0, 0, 0],
-                "scale": [0.074, 0.074, 0.074],
-                "components": [
-                  {
-                    "type": "Mesh Renderer",
-                    "mesh": "right_arm",
-                    "material": "skin"
-                  }
-                ]
-              }
-            ]
+            "children": [{
+              "name": "Player_Right_Arm",
+              "position": [0.223, -1.792, -0.216],
+              "rotation": [0, 0, 0],
+              "scale": [0.074, 0.074, 0.074],
+              "components": [
+                { "type": "Mesh Renderer", "mesh": "right_arm", "material": "skin" }
+              ]
+            }]
           },
           {
             "name": "Player_Left_Leg",
@@ -247,11 +288,7 @@
             "rotation": [0, 0, 0],
             "scale": [0.28, 0.28, 0.28],
             "components": [
-              {
-                "type": "Mesh Renderer",
-                "mesh": "left_leg",
-                "material": "skin"
-              }
+              { "type": "Mesh Renderer", "mesh": "left_leg", "material": "skin" }
             ]
           },
           {
@@ -260,26 +297,19 @@
             "rotation": [0, 0, 0],
             "scale": [0.28, 0.28, 0.28],
             "components": [
-              {
-                "type": "Mesh Renderer",
-                "mesh": "right_leg",
-                "material": "skin"
-              }
+              { "type": "Mesh Renderer", "mesh": "right_leg", "material": "skin" }
             ]
           }
         ]
       },
+
       {
         "name": "AI_Torso",
         "position": [1.3, 1.5, 0.0],
         "rotation": [0, 180, 0],
         "scale": [0.351, 0.351, 0.351],
         "components": [
-          {
-            "type": "Mesh Renderer",
-            "mesh": "torso",
-            "material": "torso_blue"
-          },
+          { "type": "Mesh Renderer", "mesh": "torso", "material": "torso_blue" },
           { "type": "Fighter", "isPlayer": false, "maxHealth": 100 }
         ],
         "children": [
@@ -295,40 +325,28 @@
           {
             "name": "AI_Left_Shoulder",
             "position": [0.6, 1.0, 0.0],
-            "children": [
-              {
-                "name": "AI_Left_Arm",
-                "position": [-0.223, -1.792, -0.216],
-                "rotation": [0, 0, 0],
-                "scale": [0.074, 0.074, 0.074],
-                "components": [
-                  {
-                    "type": "Mesh Renderer",
-                    "mesh": "left_arm",
-                    "material": "skin"
-                  }
-                ]
-              }
-            ]
+            "children": [{
+              "name": "AI_Left_Arm",
+              "position": [-0.223, -1.792, -0.216],
+              "rotation": [0, 0, 0],
+              "scale": [0.074, 0.074, 0.074],
+              "components": [
+                { "type": "Mesh Renderer", "mesh": "left_arm", "material": "skin" }
+              ]
+            }]
           },
           {
             "name": "AI_Right_Shoulder",
             "position": [-0.6, 1.0, 0.0],
-            "children": [
-              {
-                "name": "AI_Right_Arm",
-                "position": [0.223, -1.792, -0.216],
-                "rotation": [0, 0, 0],
-                "scale": [0.074, 0.074, 0.074],
-                "components": [
-                  {
-                    "type": "Mesh Renderer",
-                    "mesh": "right_arm",
-                    "material": "skin"
-                  }
-                ]
-              }
-            ]
+            "children": [{
+              "name": "AI_Right_Arm",
+              "position": [0.223, -1.792, -0.216],
+              "rotation": [0, 0, 0],
+              "scale": [0.074, 0.074, 0.074],
+              "components": [
+                { "type": "Mesh Renderer", "mesh": "right_arm", "material": "skin" }
+              ]
+            }]
           },
           {
             "name": "AI_Left_Leg",
@@ -336,11 +354,7 @@
             "rotation": [0, 0, 0],
             "scale": [0.28, 0.28, 0.28],
             "components": [
-              {
-                "type": "Mesh Renderer",
-                "mesh": "left_leg",
-                "material": "skin"
-              }
+              { "type": "Mesh Renderer", "mesh": "left_leg", "material": "skin" }
             ]
           },
           {
@@ -349,26 +363,19 @@
             "rotation": [0, 0, 0],
             "scale": [0.28, 0.28, 0.28],
             "components": [
-              {
-                "type": "Mesh Renderer",
-                "mesh": "right_leg",
-                "material": "skin"
-              }
+              { "type": "Mesh Renderer", "mesh": "right_leg", "material": "skin" }
             ]
           }
         ]
       },
+
       {
         "name": "Referee_Torso",
         "position": [0.0, 1.5, -2.0],
         "rotation": [0, 0, 0],
         "scale": [0.351, 0.351, 0.351],
         "components": [
-          {
-            "type": "Mesh Renderer",
-            "mesh": "torso",
-            "material": "torso_white"
-          },
+          { "type": "Mesh Renderer", "mesh": "torso", "material": "torso_white" },
           { "type": "Fighter", "isPlayer": false, "maxHealth": 100 }
         ],
         "children": [
@@ -384,40 +391,28 @@
           {
             "name": "Referee_Left_Shoulder",
             "position": [0.6, 1.0, 0.0],
-            "children": [
-              {
-                "name": "Referee_Left_Arm",
-                "position": [-0.223, -1.792, -0.216],
-                "rotation": [0, 0, 0],
-                "scale": [0.074, 0.074, 0.074],
-                "components": [
-                  {
-                    "type": "Mesh Renderer",
-                    "mesh": "left_arm",
-                    "material": "skin"
-                  }
-                ]
-              }
-            ]
+            "children": [{
+              "name": "Referee_Left_Arm",
+              "position": [-0.223, -1.792, -0.216],
+              "rotation": [0, 0, 0],
+              "scale": [0.074, 0.074, 0.074],
+              "components": [
+                { "type": "Mesh Renderer", "mesh": "left_arm", "material": "skin" }
+              ]
+            }]
           },
           {
             "name": "Referee_Right_Shoulder",
             "position": [-0.6, 1.0, 0.0],
-            "children": [
-              {
-                "name": "Referee_Right_Arm",
-                "position": [0.223, -1.792, -0.216],
-                "rotation": [0, 0, 0],
-                "scale": [0.074, 0.074, 0.074],
-                "components": [
-                  {
-                    "type": "Mesh Renderer",
-                    "mesh": "right_arm",
-                    "material": "skin"
-                  }
-                ]
-              }
-            ]
+            "children": [{
+              "name": "Referee_Right_Arm",
+              "position": [0.223, -1.792, -0.216],
+              "rotation": [0, 0, 0],
+              "scale": [0.074, 0.074, 0.074],
+              "components": [
+                { "type": "Mesh Renderer", "mesh": "right_arm", "material": "skin" }
+              ]
+            }]
           },
           {
             "name": "Referee_Left_Leg",
@@ -425,11 +420,7 @@
             "rotation": [0, 0, 0],
             "scale": [0.28, 0.28, 0.28],
             "components": [
-              {
-                "type": "Mesh Renderer",
-                "mesh": "left_leg",
-                "material": "skin"
-              }
+              { "type": "Mesh Renderer", "mesh": "left_leg", "material": "skin" }
             ]
           },
           {
@@ -438,11 +429,7 @@
             "rotation": [0, 0, 0],
             "scale": [0.28, 0.28, 0.28],
             "components": [
-              {
-                "type": "Mesh Renderer",
-                "mesh": "right_leg",
-                "material": "skin"
-              }
+              { "type": "Mesh Renderer", "mesh": "right_leg", "material": "skin" }
             ]
           }
         ]
