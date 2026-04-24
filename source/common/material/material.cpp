@@ -22,7 +22,7 @@ namespace our {
     // This function should setup the pipeline state and set the shader to be used
     void Material::setup() const {
         pipelineState.setup();
-        shader->use();
+        if (shader) shader->use();
     }
 
     // This function read the material data from a json object

@@ -57,6 +57,7 @@ namespace our
     // ── Camera Toggle ─────────────────────────────────────────────────────
     Entity *cameraEntity = nullptr;
     bool isFirstPerson = false;
+    float resultTimer = 0.0f; // Time since KO result appeared; member so resetCache() can clear it
     static constexpr glm::vec3 FP_OFFSET = {0.0f, 1.4f, 0.6f}; // In front of face
     static constexpr glm::vec3 TP_OFFSET = {6.0f, 6.0f,
                                             6.0f}; // Broadcaster View (Top-Left)
@@ -78,6 +79,16 @@ namespace our
     static constexpr float ARM_PUNCH_PEAK = -1.4f; // peak of punch extension
 
   public:
+    // Call before world.clear() to prevent drawHUD() from reading dangling pointers
+    // on the first frame of a new match (onImmediateGui runs before update each frame).
+    void resetCache() {
+      cachedFighter = nullptr;
+      cachedAIFighter = nullptr;
+      cameraEntity = nullptr;
+      resultTimer = 0.0f;
+      mouseLocked = false;
+    }
+
     void enter(Application *app) { this->app = app; }
 
     void setAudioEngine(ma_engine *engine)
@@ -1156,7 +1167,6 @@ namespace our
         // Auto-return to bracket after 3 seconds
         if (playerKO || aiKO)
         {
-          static float resultTimer = 0.0f;
           resultTimer += deltaTime;
           if (resultTimer > 3.0f)
           {

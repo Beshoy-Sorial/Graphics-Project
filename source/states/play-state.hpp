@@ -332,6 +332,10 @@ class Playstate : public our::State
         renderer.destroy();
         // On exit, we call exit for the camera controller system to make sure that the mouse is unlocked
         cameraController.exit();
+        // Reset cached fighter pointers BEFORE clearing the world.
+        // drawHUD() runs in onImmediateGui (before update() each frame), so on the first
+        // frame of a new match the cache could still hold dangling pointers from the old world.
+        playerController.resetCache();
         // Clear the world
         world.clear();
         // and we delete all the loaded assets to free memory on the RAM and the VRAM
