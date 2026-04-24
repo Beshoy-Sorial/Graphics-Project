@@ -189,6 +189,8 @@ namespace our
                 command.center = glm::vec3(command.localToWorld * glm::vec4(0, 0, 0, 1));
                 command.mesh = meshRenderer->mesh;
                 command.material = meshRenderer->material;
+                // Skip if mesh or material is not loaded (asset missing / typo in config)
+                if (!command.mesh || !command.material) continue;
                 // if it is transparent, we add it to the transparent commands list
                 if (command.material->transparent)
                 {
@@ -283,6 +285,7 @@ namespace our
         {
             command.material->setup();
             command.material->shader->set("transform", VP * command.localToWorld);
+            command.material->shader->set("weatherMode", g_WeatherMode);
             sendLitUniforms(command);
             command.mesh->draw();
         }
@@ -290,6 +293,14 @@ namespace our
         // If there is a sky material, draw the sky
         if (this->skyMaterial)
         {
+            if (g_WeatherMode == 0) {
+                skyMaterial->tint = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // Bright sunny sky
+            } else if (g_WeatherMode == 1) {
+                skyMaterial->tint = glm::vec4(0.15f, 0.15f, 0.25f, 1.0f); // Dark night
+            } else if (g_WeatherMode == 2) {
+                skyMaterial->tint = glm::vec4(0.7f, 0.7f, 0.75f, 1.0f); // Overcast snow
+            }
+
             // TODO: (Req 10) setup the sky material
             skyMaterial->setup();
 
@@ -317,6 +328,7 @@ namespace our
         {
             command.material->setup();
             command.material->shader->set("transform", VP * command.localToWorld);
+            command.material->shader->set("weatherMode", g_WeatherMode);
             sendLitUniforms(command);
             command.mesh->draw();
         }
