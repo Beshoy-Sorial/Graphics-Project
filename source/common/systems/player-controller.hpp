@@ -47,6 +47,8 @@ namespace our
     Application *app = nullptr;
     ma_engine *audioEngine = nullptr;
     ma_sound countSound; // Sound handle for the long countdown audio
+    ma_sound punchSound; // Sound handle for punch
+    ma_sound stunSound;  // Sound handle for stun
 
     // Cached pointer so HUD can read it without searching entities again
     FighterComponent *cachedFighter = nullptr;
@@ -86,6 +88,10 @@ namespace our
         // Initialize the countdown sound once here to avoid engine corruption
         ma_sound_init_from_file(audioEngine, "assets/audio/conut_down.mp3", 0,
                                 NULL, NULL, &countSound);
+        ma_sound_init_from_file(audioEngine, "assets/audio/bunch.mp3", 0,
+                                NULL, NULL, &punchSound);
+        ma_sound_init_from_file(audioEngine, "assets/audio/stun.mp3", 0,
+                                NULL, NULL, &stunSound);
       }
     }
 
@@ -201,8 +207,12 @@ namespace our
         if (mouse.justPressed(GLFW_MOUSE_BUTTON_LEFT))
         {
           playerFighter->leftPunchTimer = FighterComponent::PUNCH_DURATION;
-          if (audioEngine)
-            ma_engine_play_sound(audioEngine, "assets/audio/bunch.mp3", NULL);
+          if (audioEngine) {
+            if (!ma_sound_is_playing(&punchSound)) {
+              ma_sound_seek_to_pcm_frame(&punchSound, 0);
+              ma_sound_start(&punchSound);
+            }
+          }
           if (aiFighter)
           {
             float dist = glm::distance(playerFighter->basePosition,
@@ -213,9 +223,12 @@ namespace our
               {
                 // Blocked!
                 playerFighter->stunnedTimer = FighterComponent::STUN_DURATION;
-                if (audioEngine)
-                  ma_engine_play_sound(audioEngine, "assets/audio/stun.mp3",
-                                       NULL);
+                if (audioEngine) {
+                  if (!ma_sound_is_playing(&stunSound)) {
+                    ma_sound_seek_to_pcm_frame(&stunSound, 0);
+                    ma_sound_start(&stunSound);
+                  }
+                }
               }
               else if (aiFighter->state != FighterState::KNOCKED_DOWN)
               {
@@ -229,8 +242,12 @@ namespace our
         if (mouse.justPressed(GLFW_MOUSE_BUTTON_RIGHT))
         {
           playerFighter->rightPunchTimer = FighterComponent::PUNCH_DURATION;
-          if (audioEngine)
-            ma_engine_play_sound(audioEngine, "assets/audio/bunch.mp3", NULL);
+          if (audioEngine) {
+            if (!ma_sound_is_playing(&punchSound)) {
+              ma_sound_seek_to_pcm_frame(&punchSound, 0);
+              ma_sound_start(&punchSound);
+            }
+          }
           if (aiFighter)
           {
             float dist = glm::distance(playerFighter->basePosition,
@@ -241,9 +258,12 @@ namespace our
               {
                 // Blocked!
                 playerFighter->stunnedTimer = FighterComponent::STUN_DURATION;
-                if (audioEngine)
-                  ma_engine_play_sound(audioEngine, "assets/audio/stun.mp3",
-                                       NULL);
+                if (audioEngine) {
+                  if (!ma_sound_is_playing(&stunSound)) {
+                    ma_sound_seek_to_pcm_frame(&stunSound, 0);
+                    ma_sound_start(&stunSound);
+                  }
+                }
               }
               else if (aiFighter->state != FighterState::KNOCKED_DOWN)
               {
@@ -591,7 +611,10 @@ namespace our
 
                   if (audioEngine)
                   {
-                    ma_engine_play_sound(audioEngine, "assets/audio/bunch.mp3", NULL);
+                    if (!ma_sound_is_playing(&punchSound)) {
+                      ma_sound_seek_to_pcm_frame(&punchSound, 0);
+                      ma_sound_start(&punchSound);
+                    }
                   }
 
                   float hitDist = glm::distance(fighter->basePosition, playerFighter->basePosition);
@@ -617,8 +640,12 @@ namespace our
                     if (blockedCorrectSide)
                     {
                       fighter->stunnedTimer = FighterComponent::STUN_DURATION;
-                      if (audioEngine)
-                        ma_engine_play_sound(audioEngine, "assets/audio/stun.mp3", NULL);
+                      if (audioEngine) {
+                        if (!ma_sound_is_playing(&stunSound)) {
+                          ma_sound_seek_to_pcm_frame(&stunSound, 0);
+                          ma_sound_start(&stunSound);
+                        }
+                      }
                     }
                     else if (playerFighter->state != FighterState::KNOCKED_DOWN)
                     {
