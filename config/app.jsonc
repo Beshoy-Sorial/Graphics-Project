@@ -153,15 +153,12 @@
     "world": [
       // ═══════════════════════════════════════════════════════════════════
       // LIGHTS — 7 lights, 3 types (spot + point + directional)
-      // "Fight Night" cinematic arena lighting
+      //          "Fight Night" arena — balanced so floor keeps natural color
       // ═══════════════════════════════════════════════════════════════════
 
-      // 1. CENTER ARENA SPOTLIGHT — the iconic boxing-match overhead beam.
-      //    Spot light pointing straight down (rotation [-90,0,0]).
-      //    Creates a bright oval of white light on the ring canvas center
-      //    with a soft penumbra fading to the coloured corner lights.
-      //    attenuation tuned so the beam reaches the ring (~10 units down)
-      //    without washing out the canvas texture.
+      // 1. CenterArenaSpot — overhead spot beam on the ring center.
+      //    Near-white, focused beam. Ambient kept very low so it only
+      //    brightens what's directly under the beam.
       {
         "name": "CenterArenaSpot",
         "position": [0.0, 10.0, 0.0],
@@ -171,7 +168,7 @@
           "lightType": "spot",
           "diffuse":  [1.0, 0.97, 0.90],
           "specular": [1.0, 0.97, 0.90],
-          "ambient":  [0.10, 0.09, 0.07],
+          "ambient":  [0.04, 0.04, 0.04],
           "attenuationConstant":  1.0,
           "attenuationLinear":    0.022,
           "attenuationQuadratic": 0.0019,
@@ -180,9 +177,8 @@
         }]
       },
 
-      // 2. RED CORNER — vivid scarlet point on the player's left side.
-      //    Placed higher and closer than before; stronger attenuation so the
-      //    colour pool stays sharp on the floor and ring canvas edge.
+      // 2. RedCornerLight — vivid scarlet point on the player's left side.
+      //    No ambient — color only appears near the corner, not globally.
       {
         "name": "RedCornerLight",
         "position": [-4.5, 5.5, 0.0],
@@ -198,8 +194,8 @@
         }]
       },
 
-      // 3. BLUE CORNER — electric cobalt point on the AI's right side.
-      //    Same placement strategy as the red corner for symmetry.
+      // 3. BlueCornerLight — electric cobalt on the AI's right side.
+      //    No ambient — mirror of red corner.
       {
         "name": "BlueCornerLight",
         "position": [4.5, 5.5, 0.0],
@@ -215,68 +211,63 @@
         }]
       },
 
-      // 4. GOLDEN BROADCAST LEFT — warm rich-gold directional from upper-left.
-      //    Simulates the stadium TV-broadcast floods every boxing venue uses.
-      //    rotation [-30,45,0]: pitch=-30° (angled down), yaw=+45° (from left).
-      //    Creates golden specular glints on the ring canvas and fighters' skin.
+      // 4. GoldenBroadcastLeft — warm gold accent from upper-left.
+      //    Diffuse cut to ~28% so it adds warm specular glints on the ring
+      //    canvas WITHOUT painting the whole floor yellow. Zero ambient.
       {
         "name": "GoldenBroadcastLeft",
         "rotation": [-30, 45, 0],
         "components": [{
           "type": "Light",
           "lightType": "directional",
-          "diffuse":  [1.0, 0.78, 0.18],
-          "specular": [1.0, 0.85, 0.35],
-          "ambient":  [0.08, 0.062, 0.014]
+          "diffuse":  [0.28, 0.22, 0.05],
+          "specular": [0.55, 0.45, 0.15],
+          "ambient":  [0.0, 0.0, 0.0]
         }]
       },
 
-      // 5. AMBER BROADCAST RIGHT — slightly warmer amber from upper-right.
-      //    Offsets the golden left light to avoid flat-lit look; the slight
-      //    hue difference creates interesting cross-shadows on the canvas.
-      //    rotation [-30,-45,0]: same pitch, mirrored yaw.
+      // 5. AmberBroadcastRight — subtle amber accent from upper-right.
+      //    Same approach: strong specular, very low diffuse, zero ambient.
       {
         "name": "AmberBroadcastRight",
         "rotation": [-30, -45, 0],
         "components": [{
           "type": "Light",
           "lightType": "directional",
-          "diffuse":  [0.95, 0.65, 0.12],
-          "specular": [0.95, 0.72, 0.28],
-          "ambient":  [0.07, 0.050, 0.010]
+          "diffuse":  [0.24, 0.18, 0.04],
+          "specular": [0.50, 0.38, 0.12],
+          "ambient":  [0.0, 0.0, 0.0]
         }]
       },
 
-      // 6. PURPLE MAGENTA RIM — vivid violet from directly behind the ring.
-      //    rotation [20,180,0]: yaw=180 flips -Z to +Z (from behind),
-      //    pitch=+20 tilts upward slightly so it catches the tops of fighters.
-      //    Creates dramatic silhouette highlights on backs and shoulders —
-      //    the most visually distinctive light in the setup.
+      // 6. PurpleMagentaRim — vivid violet from behind.
+      //    Creates dramatic silhouette highlights on fighters' backs.
+      //    Zero ambient so it only appears on back-facing surfaces.
       {
         "name": "PurpleMagentaRim",
         "rotation": [20, 180, 0],
         "components": [{
           "type": "Light",
           "lightType": "directional",
-          "diffuse":  [0.65, 0.05, 0.95],
-          "specular": [0.70, 0.10, 1.0],
-          "ambient":  [0.016, 0.0, 0.024]
+          "diffuse":  [0.55, 0.04, 0.80],
+          "specular": [0.60, 0.08, 0.90],
+          "ambient":  [0.0, 0.0, 0.0]
         }]
       },
 
-      // 7. COOL FRONTAL FILL — soft teal-blue from the camera direction.
-      //    Prevents faces from going pure black; adds a cool cinematic
-      //    contrast against the warm gold broadcast lights.
-      //    rotation [-8,0,0]: very shallow pitch so it hits faces directly.
+      // 7. CoolFrontalFill — single source of global ambient + front fill.
+      //    This is the only light providing ambient; by centralizing ambient
+      //    here we avoid the yellow-cast bleed that multiple warm ambients caused.
+      //    Soft teal-blue keeps faces visible and contrasts the warm golds.
       {
         "name": "CoolFrontalFill",
         "rotation": [-8, 0, 0],
         "components": [{
           "type": "Light",
           "lightType": "directional",
-          "diffuse":  [0.18, 0.32, 0.55],
+          "diffuse":  [0.18, 0.30, 0.50],
           "specular": [0.0,  0.0,  0.0],
-          "ambient":  [0.04, 0.05, 0.09]
+          "ambient":  [0.10, 0.12, 0.14]
         }]
       },
 
