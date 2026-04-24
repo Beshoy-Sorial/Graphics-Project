@@ -283,17 +283,18 @@ class Playstate : public our::State
             }
         }
 
-        // Apply the selected arena color to the ring
+        // Apply the selected arena colour tint to the Ring canvas and Floor.
+        // Both use LitMaterial so we cast to that; the tint is multiplied into
+        // the albedo inside lit.frag via the "material_tint" uniform.
         for (auto entity : world.getEntities()) {
-            if (entity->name == "Ring") {
+            if (entity->name == "Ring" || entity->name == "Floor") {
                 auto* mr = entity->getComponent<our::MeshRendererComponent>();
                 if (mr) {
-                    auto* ringMaterial = dynamic_cast<our::TintedMaterial*>(mr->material);
-                    if (ringMaterial) {
-                        ringMaterial->tint = tm.selectedArenaColor;
+                    auto* litMat = dynamic_cast<our::LitMaterial*>(mr->material);
+                    if (litMat) {
+                        litMat->tint = glm::vec3(tm.selectedArenaColor);
                     }
                 }
-                break;
             }
         }
     }

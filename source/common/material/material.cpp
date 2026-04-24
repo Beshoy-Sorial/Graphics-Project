@@ -74,6 +74,7 @@ namespace our {
     void LitMaterial::setup() const {
         if(!shader) return;
         Material::setup();
+        shader->set("material_tint", tint);
 
         auto bindMap = [&](int unit, Texture2D* tex, Texture2D* fallback, const std::string& name){
         glActiveTexture(GL_TEXTURE0 + unit);

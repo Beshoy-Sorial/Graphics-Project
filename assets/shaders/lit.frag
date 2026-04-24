@@ -11,12 +11,14 @@ in Varyings {
 
 uniform TexturedMaterial material;
 uniform vec3 camera_position;
+uniform vec3 material_tint; // Per-material colour tint; default white (1,1,1)
 
 out vec4 frag_color;
 
 void main(){
     vec3  albedo   = texture(material.albedo_tex,           fs_in.tex_coord).rgb
-                     * fs_in.color.rgb;                   
+                     * fs_in.color.rgb
+                     * material_tint;                   
     vec3  specTex  = texture(material.specular_tex,         fs_in.tex_coord).rgb;
     float ao       = texture(material.ambient_occlusion_tex, fs_in.tex_coord).r;
     float rough    = texture(material.roughness_tex,        fs_in.tex_coord).r;

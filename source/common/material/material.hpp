@@ -62,6 +62,7 @@ namespace our {
         Texture2D* roughness_map        = nullptr;
         Texture2D* emissive_map         = nullptr;
         Sampler*   sampler              = nullptr;
+        glm::vec3  tint                 = glm::vec3(1.0f, 1.0f, 1.0f); // Multiplied into albedo
 
         void setup() const override;
         void deserialize(const nlohmann::json& data) override;
