@@ -7,7 +7,16 @@ in Varyings {
 out vec4 frag_color;
 
 uniform vec4 tint;
+uniform int weatherMode;
 
 void main(){
-    frag_color = tint * fs_in.color;
+    vec4 final_color = tint * fs_in.color;
+    if (weatherMode == 0) { // Sunny
+        final_color *= vec4(1.2, 1.15, 0.9, 1.0); // Bright sunlight
+    } else if (weatherMode == 1) { // Rainy / Night
+        final_color *= vec4(0.3, 0.35, 0.5, 1.0); // Dark, moonlit
+    } else if (weatherMode == 2) { // Snow
+        final_color *= vec4(0.85, 0.9, 1.0, 1.0); // Overcast
+    }
+    frag_color = final_color;
 }

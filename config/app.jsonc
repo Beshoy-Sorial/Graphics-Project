@@ -1,250 +1,452 @@
 {
-    "start-scene": "menu",
-    "window": {
-        "title": "Boxing Fighter Championship",
-        "size": { "width": 1280, "height": 720 },
-        "fullscreen": false
+  "start-scene": "menu",
+  "window": {
+    "title": "Boxing Fighter Championship",
+    "size": { "width": 1280, "height": 720 },
+    "fullscreen": false
+  },
+  "scene": {
+    "renderer": {
+      "sky": "assets/textures/sky.jpg",
+      "postprocess": "assets/shaders/postprocess/vignette.frag"
     },
-    "scene": {
-        "renderer": {
-            "sky": "assets/textures/sky.jpg",
-            "postprocess": "assets/shaders/postprocess/vignette.frag"
+    "assets": {
+      "shaders": {
+        "tinted": {
+          "vs": "assets/shaders/tinted.vert",
+          "fs": "assets/shaders/tinted.frag"
         },
-        "assets": {
-            "shaders": {
-                "tinted": { "vs": "assets/shaders/tinted.vert", "fs": "assets/shaders/tinted.frag" },
-                "textured": { "vs": "assets/shaders/textured.vert", "fs": "assets/shaders/textured.frag" }
-            },
-            "samplers": { "default": {} },
-            "textures": {
-                "ring": "assets/textures/ring.png"
-            },
-            "meshes": {
-                "torso":     "assets/models/torso.obj",
-                "head":      "assets/models/head.obj",
-                "left_arm":  "assets/models/left_arm.obj",
-                "right_arm": "assets/models/right_arm.obj",
-                "left_leg":  "assets/models/left_leg.obj",
-                "right_leg": "assets/models/right_leg.obj",
-                "ring":      "assets/models/ring.obj",
-                "plane":     "assets/models/plane.obj"
-            },
-            "materials": {
-                "skin":        { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.95,0.78,0.65,1.0] },
-                "skin_yellow": { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[1.0,0.9,0.0,1.0] },
-                "torso_red":  { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.85,0.15,0.15,1.0] },
-                "torso_blue": { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.15,0.35,0.85,1.0] },
-                "torso_white": { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.9,0.9,0.9,1.0] },
-                "ring_mat":   { "type":"textured","shader":"textured","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[1.0,1.0,1.0,1.0], "texture":"ring", "sampler":"default" },
-                "floor_mat":  { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.18,0.18,0.18,1.0] },
-                "torso_green":  { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.1,0.7,0.1,1.0] },
-                "torso_yellow": { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.8,0.7,0.1,1.0] },
-                "torso_purple": { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.5,0.1,0.7,1.0] },
-                "torso_cyan":   { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.1,0.7,0.8,1.0] },
-                "torso_orange": { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.9,0.5,0.1,1.0] },
-                "torso_black":  { "type":"tinted","shader":"tinted","pipelineState":{"faceCulling":{"enabled":false},"depthTesting":{"enabled":true}},"tint":[0.2,0.2,0.2,1.0] }
-            }
+        "textured": {
+          "vs": "assets/shaders/textured.vert",
+          "fs": "assets/shaders/textured.frag"
+        }
+      },
+      "samplers": { "default": {} },
+      "textures": {
+        "ring": "assets/textures/ring.png"
+      },
+      "meshes": {
+        "torso": "assets/models/torso.obj",
+        "head": "assets/models/head.obj",
+        "left_arm": "assets/models/left_arm.obj",
+        "right_arm": "assets/models/right_arm.obj",
+        "left_leg": "assets/models/left_leg.obj",
+        "right_leg": "assets/models/right_leg.obj",
+        "ring": "assets/models/ring.obj",
+        "plane": "assets/models/plane.obj"
+      },
+      "materials": {
+        "skin": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.95, 0.78, 0.65, 1.0]
         },
-        "world": [
-            {
-                "name": "Camera",
-                "position": [0.0, 1.5, 6.0],
-                "rotation": [-8, 0, 0],
-                "components": [
-                    { "type": "Camera" },
-                    { "type": "Free Camera Controller" }
-                ]
-            },
-            {
-                "name": "Ring",
-                "position": [0, 0, 0],
-                "scale": [0.83, 0.83, 0.83],
-                "components": [{ "type": "Mesh Renderer", "mesh": "ring", "material": "ring_mat" }]
-            },
-            {
-                "name": "Floor",
-                "position": [0, -0.02, 0],
-                "rotation": [-90, 0, 0],
-                "scale": [30, 30, 1],
-                "components": [{ "type": "Mesh Renderer", "mesh": "plane", "material": "floor_mat" }]
-            },
-            {
-                "name": "Player_Torso",
-                "position": [-1.3, 1.50, 0.0],
-                "rotation": [0, 0, 0],
-                "scale": [0.351, 0.351, 0.351],
-                "components": [
-                    { "type": "Mesh Renderer", "mesh": "torso", "material": "torso_red" },
-                    { "type": "Fighter", "isPlayer": true, "maxHealth": 100 }
-                ],
-                "children": [
-                    {
-                        "name": "Player_Head",
-                        "position": [-0.180, 1.102, -0.244],
-                        "rotation": [0, -90, 0],
-                        "scale": [0.191, 0.191, 0.191],
-                        "components": [{ "type": "Mesh Renderer", "mesh": "head", "material": "skin" }]
-                    },
-                    {
-                        "name": "Player_Left_Shoulder",
-                        "position": [0.6, 1.0, 0.0],
-                        "children": [
-                            {
-                                "name": "Player_Left_Arm",
-                                "position": [-0.223, -1.792, -0.216],
-                                "rotation": [0, 0, 0],
-                                "scale": [0.074, 0.074, 0.074],
-                                "components": [{ "type": "Mesh Renderer", "mesh": "left_arm", "material": "skin" }]
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Player_Right_Shoulder",
-                        "position": [-0.6, 1.0, 0.0],
-                        "children": [
-                            {
-                                "name": "Player_Right_Arm",
-                                "position": [0.223, -1.792, -0.216],
-                                "rotation": [0, 0, 0],
-                                "scale": [0.074, 0.074, 0.074],
-                                "components": [{ "type": "Mesh Renderer", "mesh": "right_arm", "material": "skin" }]
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Player_Left_Leg",
-                        "position": [0.368, -2.92, -0.135],
-                        "rotation": [0, 0, 0],
-                        "scale": [0.28, 0.28, 0.28],
-                        "components": [{ "type": "Mesh Renderer", "mesh": "left_leg", "material": "skin" }]
-                    },
-                    {
-                        "name": "Player_Right_Leg",
-                        "position": [-0.368, -2.92, -0.135],
-                        "rotation": [0, 0, 0],
-                        "scale": [0.28, 0.28, 0.28],
-                        "components": [{ "type": "Mesh Renderer", "mesh": "right_leg", "material": "skin" }]
-                    }
-                ]
-            },
-            {
-                "name": "AI_Torso",
-                "position": [1.3, 1.50, 0.0],
-                "rotation": [0, 180, 0],
-                "scale": [0.351, 0.351, 0.351],
-                "components": [
-                    { "type": "Mesh Renderer", "mesh": "torso", "material": "torso_blue" },
-                    { "type": "Fighter", "isPlayer": false, "maxHealth": 100 }
-                ],
-                "children": [
-                    {
-                        "name": "AI_Head",
-                        "position": [-0.180, 1.102, -0.244],
-                        "rotation": [0, -90, 0],
-                        "scale": [0.191, 0.191, 0.191],
-                        "components": [{ "type": "Mesh Renderer", "mesh": "head", "material": "skin" }]
-                    },
-                    {
-                        "name": "AI_Left_Shoulder",
-                        "position": [0.6, 1.0, 0.0],
-                        "children": [
-                            {
-                                "name": "AI_Left_Arm",
-                                "position": [-0.223, -1.792, -0.216],
-                                "rotation": [0, 0, 0],
-                                "scale": [0.074, 0.074, 0.074],
-                                "components": [{ "type": "Mesh Renderer", "mesh": "left_arm", "material": "skin" }]
-                            }
-                        ]
-                    },
-                    {
-                        "name": "AI_Right_Shoulder",
-                        "position": [-0.6, 1.0, 0.0],
-                        "children": [
-                            {
-                                "name": "AI_Right_Arm",
-                                "position": [0.223, -1.792, -0.216],
-                                "rotation": [0, 0, 0],
-                                "scale": [0.074, 0.074, 0.074],
-                                "components": [{ "type": "Mesh Renderer", "mesh": "right_arm", "material": "skin" }]
-                            }
-                        ]
-                    },
-                    {
-                        "name": "AI_Left_Leg",
-                        "position": [0.368, -2.92, -0.135],
-                        "rotation": [0, 0, 0],
-                        "scale": [0.28, 0.28, 0.28],
-                        "components": [{ "type": "Mesh Renderer", "mesh": "left_leg", "material": "skin" }]
-                    },
-                    {
-                        "name": "AI_Right_Leg",
-                        "position": [-0.368, -2.92, -0.135],
-                        "rotation": [0, 0, 0],
-                        "scale": [0.28, 0.28, 0.28],
-                        "components": [{ "type": "Mesh Renderer", "mesh": "right_leg", "material": "skin" }]
-                    }
-                ]
-            },
-            {
-                "name": "Referee_Torso",
-                "position": [0.0, 1.50, -2.0],
-                "rotation": [0, 0, 0],
-                "scale": [0.351, 0.351, 0.351],
-                "components": [
-                    { "type": "Mesh Renderer", "mesh": "torso", "material": "torso_white" },
-                    { "type": "Fighter", "isPlayer": false, "maxHealth": 100 }
-                ],
-                "children": [
-                    {
-                        "name": "Referee_Head",
-                        "position": [-0.180, 1.102, -0.244],
-                        "rotation": [0, -90, 0],
-                        "scale": [0.152, 0.152, 0.152],
-                        "components": [{ "type": "Mesh Renderer", "mesh": "head", "material": "skin" }]
-                    },
-                    {
-                        "name": "Referee_Left_Shoulder",
-                        "position": [0.6, 1.0, 0.0],
-                        "children": [
-                            {
-                                "name": "Referee_Left_Arm",
-                                "position": [-0.223, -1.792, -0.216],
-                                "rotation": [0, 0, 0],
-                                "scale": [0.074, 0.074, 0.074],
-                                "components": [{ "type": "Mesh Renderer", "mesh": "left_arm", "material": "skin" }]
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Referee_Right_Shoulder",
-                        "position": [-0.6, 1.0, 0.0],
-                        "children": [
-                            {
-                                "name": "Referee_Right_Arm",
-                                "position": [0.223, -1.792, -0.216],
-                                "rotation": [0, 0, 0],
-                                "scale": [0.074, 0.074, 0.074],
-                                "components": [{ "type": "Mesh Renderer", "mesh": "right_arm", "material": "skin" }]
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Referee_Left_Leg",
-                        "position": [0.368, -2.92, -0.135],
-                        "rotation": [0, 0, 0],
-                        "scale": [0.28, 0.28, 0.28],
-                        "components": [{ "type": "Mesh Renderer", "mesh": "left_leg", "material": "skin" }]
-                    },
-                    {
-                        "name": "Referee_Right_Leg",
-                        "position": [-0.368, -2.92, -0.135],
-                        "rotation": [0, 0, 0],
-                        "scale": [0.28, 0.28, 0.28],
-                        "components": [{ "type": "Mesh Renderer", "mesh": "right_leg", "material": "skin" }]
-                    }
-                ]
-            }
+        "skin_yellow": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [1.0, 0.9, 0.0, 1.0]
+        },
+        "torso_red": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.85, 0.15, 0.15, 1.0]
+        },
+        "torso_blue": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.15, 0.35, 0.85, 1.0]
+        },
+        "torso_white": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.9, 0.9, 0.9, 1.0]
+        },
+        "ring_mat": {
+          "type": "textured",
+          "shader": "textured",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [1.0, 1.0, 1.0, 1.0],
+          "texture": "ring",
+          "sampler": "default"
+        },
+        "floor_mat": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.18, 0.18, 0.18, 1.0]
+        },
+        "torso_green": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.1, 0.7, 0.1, 1.0]
+        },
+        "torso_yellow": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.8, 0.7, 0.1, 1.0]
+        },
+        "torso_purple": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.5, 0.1, 0.7, 1.0]
+        },
+        "torso_cyan": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.1, 0.7, 0.8, 1.0]
+        },
+        "torso_orange": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.9, 0.5, 0.1, 1.0]
+        },
+        "torso_black": {
+          "type": "tinted",
+          "shader": "tinted",
+          "pipelineState": {
+            "faceCulling": { "enabled": false },
+            "depthTesting": { "enabled": true }
+          },
+          "tint": [0.2, 0.2, 0.2, 1.0]
+        }
+      }
+    },
+    "world": [
+      {
+        "name": "Camera",
+        "position": [0.0, 1.5, 6.0],
+        "rotation": [-8, 0, 0],
+        "components": [
+          { "type": "Camera" },
+          { "type": "Free Camera Controller" }
         ]
-    }
+      },
+      {
+        "name": "Ring",
+        "position": [0, 0, 0],
+        "scale": [0.83, 0.83, 0.83],
+        "components": [
+          { "type": "Mesh Renderer", "mesh": "ring", "material": "ring_mat" }
+        ]
+      },
+      {
+        "name": "Floor",
+        "position": [0, -0.02, 0],
+        "rotation": [-90, 0, 0],
+        "scale": [30, 30, 1],
+        "components": [
+          { "type": "Mesh Renderer", "mesh": "plane", "material": "floor_mat" }
+        ]
+      },
+      {
+        "name": "Player_Torso",
+        "position": [-1.3, 1.5, 0.0],
+        "rotation": [0, 0, 0],
+        "scale": [0.351, 0.351, 0.351],
+        "components": [
+          { "type": "Mesh Renderer", "mesh": "torso", "material": "torso_red" },
+          { "type": "Fighter", "isPlayer": true, "maxHealth": 100 }
+        ],
+        "children": [
+          {
+            "name": "Player_Head",
+            "position": [-0.18, 1.102, -0.244],
+            "rotation": [0, -90, 0],
+            "scale": [0.191, 0.191, 0.191],
+            "components": [
+              { "type": "Mesh Renderer", "mesh": "head", "material": "skin" }
+            ]
+          },
+          {
+            "name": "Player_Left_Shoulder",
+            "position": [0.6, 1.0, 0.0],
+            "children": [
+              {
+                "name": "Player_Left_Arm",
+                "position": [-0.223, -1.792, -0.216],
+                "rotation": [0, 0, 0],
+                "scale": [0.074, 0.074, 0.074],
+                "components": [
+                  {
+                    "type": "Mesh Renderer",
+                    "mesh": "left_arm",
+                    "material": "skin"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Player_Right_Shoulder",
+            "position": [-0.6, 1.0, 0.0],
+            "children": [
+              {
+                "name": "Player_Right_Arm",
+                "position": [0.223, -1.792, -0.216],
+                "rotation": [0, 0, 0],
+                "scale": [0.074, 0.074, 0.074],
+                "components": [
+                  {
+                    "type": "Mesh Renderer",
+                    "mesh": "right_arm",
+                    "material": "skin"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Player_Left_Leg",
+            "position": [0.368, -2.92, -0.135],
+            "rotation": [0, 0, 0],
+            "scale": [0.28, 0.28, 0.28],
+            "components": [
+              {
+                "type": "Mesh Renderer",
+                "mesh": "left_leg",
+                "material": "skin"
+              }
+            ]
+          },
+          {
+            "name": "Player_Right_Leg",
+            "position": [-0.368, -2.92, -0.135],
+            "rotation": [0, 0, 0],
+            "scale": [0.28, 0.28, 0.28],
+            "components": [
+              {
+                "type": "Mesh Renderer",
+                "mesh": "right_leg",
+                "material": "skin"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "AI_Torso",
+        "position": [1.3, 1.5, 0.0],
+        "rotation": [0, 180, 0],
+        "scale": [0.351, 0.351, 0.351],
+        "components": [
+          {
+            "type": "Mesh Renderer",
+            "mesh": "torso",
+            "material": "torso_blue"
+          },
+          { "type": "Fighter", "isPlayer": false, "maxHealth": 100 }
+        ],
+        "children": [
+          {
+            "name": "AI_Head",
+            "position": [-0.18, 1.102, -0.244],
+            "rotation": [0, -90, 0],
+            "scale": [0.191, 0.191, 0.191],
+            "components": [
+              { "type": "Mesh Renderer", "mesh": "head", "material": "skin" }
+            ]
+          },
+          {
+            "name": "AI_Left_Shoulder",
+            "position": [0.6, 1.0, 0.0],
+            "children": [
+              {
+                "name": "AI_Left_Arm",
+                "position": [-0.223, -1.792, -0.216],
+                "rotation": [0, 0, 0],
+                "scale": [0.074, 0.074, 0.074],
+                "components": [
+                  {
+                    "type": "Mesh Renderer",
+                    "mesh": "left_arm",
+                    "material": "skin"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "AI_Right_Shoulder",
+            "position": [-0.6, 1.0, 0.0],
+            "children": [
+              {
+                "name": "AI_Right_Arm",
+                "position": [0.223, -1.792, -0.216],
+                "rotation": [0, 0, 0],
+                "scale": [0.074, 0.074, 0.074],
+                "components": [
+                  {
+                    "type": "Mesh Renderer",
+                    "mesh": "right_arm",
+                    "material": "skin"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "AI_Left_Leg",
+            "position": [0.368, -2.92, -0.135],
+            "rotation": [0, 0, 0],
+            "scale": [0.28, 0.28, 0.28],
+            "components": [
+              {
+                "type": "Mesh Renderer",
+                "mesh": "left_leg",
+                "material": "skin"
+              }
+            ]
+          },
+          {
+            "name": "AI_Right_Leg",
+            "position": [-0.368, -2.92, -0.135],
+            "rotation": [0, 0, 0],
+            "scale": [0.28, 0.28, 0.28],
+            "components": [
+              {
+                "type": "Mesh Renderer",
+                "mesh": "right_leg",
+                "material": "skin"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Referee_Torso",
+        "position": [0.0, 1.5, -2.0],
+        "rotation": [0, 0, 0],
+        "scale": [0.351, 0.351, 0.351],
+        "components": [
+          {
+            "type": "Mesh Renderer",
+            "mesh": "torso",
+            "material": "torso_white"
+          },
+          { "type": "Fighter", "isPlayer": false, "maxHealth": 100 }
+        ],
+        "children": [
+          {
+            "name": "Referee_Head",
+            "position": [-0.18, 1.102, -0.244],
+            "rotation": [0, -90, 0],
+            "scale": [0.152, 0.152, 0.152],
+            "components": [
+              { "type": "Mesh Renderer", "mesh": "head", "material": "skin" }
+            ]
+          },
+          {
+            "name": "Referee_Left_Shoulder",
+            "position": [0.6, 1.0, 0.0],
+            "children": [
+              {
+                "name": "Referee_Left_Arm",
+                "position": [-0.223, -1.792, -0.216],
+                "rotation": [0, 0, 0],
+                "scale": [0.074, 0.074, 0.074],
+                "components": [
+                  {
+                    "type": "Mesh Renderer",
+                    "mesh": "left_arm",
+                    "material": "skin"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Referee_Right_Shoulder",
+            "position": [-0.6, 1.0, 0.0],
+            "children": [
+              {
+                "name": "Referee_Right_Arm",
+                "position": [0.223, -1.792, -0.216],
+                "rotation": [0, 0, 0],
+                "scale": [0.074, 0.074, 0.074],
+                "components": [
+                  {
+                    "type": "Mesh Renderer",
+                    "mesh": "right_arm",
+                    "material": "skin"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Referee_Left_Leg",
+            "position": [0.368, -2.92, -0.135],
+            "rotation": [0, 0, 0],
+            "scale": [0.28, 0.28, 0.28],
+            "components": [
+              {
+                "type": "Mesh Renderer",
+                "mesh": "left_leg",
+                "material": "skin"
+              }
+            ]
+          },
+          {
+            "name": "Referee_Right_Leg",
+            "position": [-0.368, -2.92, -0.135],
+            "rotation": [0, 0, 0],
+            "scale": [0.28, 0.28, 0.28],
+            "components": [
+              {
+                "type": "Mesh Renderer",
+                "mesh": "right_leg",
+                "material": "skin"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }

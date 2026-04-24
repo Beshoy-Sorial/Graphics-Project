@@ -14,6 +14,13 @@ namespace our {
         float speed;
     };
 
+    enum class DifficultyLevel {
+        Easy,
+        Medium,
+        Hard,
+        Difficult
+    };
+
     class TournamentManager {
     public:
         static TournamentManager& getInstance() {
@@ -27,6 +34,7 @@ namespace our {
         glm::vec4 selectedArenaColor = glm::vec4(0.18f, 0.18f, 0.18f, 1.0f); // Default gray
         bool arenaColorSelected = false; // Track if color has been selected once
 
+        DifficultyLevel selectedDifficulty = DifficultyLevel::Medium;
         const std::vector<CharacterDef> characters = {
             {"Red Dragon",   "torso_red",    {0.8f, 0.1f, 0.1f, 1.0f}, 1.2f, 1.0f},
             {"Blue Frost",   "torso_blue",   {0.1f, 0.3f, 0.8f, 1.0f}, 1.0f, 1.2f},
@@ -38,10 +46,19 @@ namespace our {
             {"Black Shadow", "torso_black",  {0.2f, 0.2f, 0.2f, 1.0f}, 1.2f, 1.2f}
         };
 
+        const char* difficultyName() const {
+            switch (selectedDifficulty) {
+            case DifficultyLevel::Easy: return "Easy";
+            case DifficultyLevel::Medium: return "Medium";
+            case DifficultyLevel::Hard: return "Hard";
+            case DifficultyLevel::Difficult: return "Difficult";
+            default: return "Medium";
+        }
+}
         const CharacterDef& getSelectedCharacter() const {
             return characters[selectedCharacterIndex];
         }
-
+        
         void reset() {
             currentRound = 1;
             currentOpponentIndex = 0;

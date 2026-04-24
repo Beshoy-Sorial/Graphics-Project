@@ -62,7 +62,19 @@ namespace our {
 
         // ── AI Logic ───────────────────────────────────────────────
         float aiDecisionTimer = 0.0f; // Time until the AI makes its next move
+        // AI behavior tuning (set per difficulty in Playstate)
+        float aiAttackWeight = 0.40f;
+        float aiDefendWeight = 0.30f;
+        float aiIdleWeight = 0.30f;
 
+        float aiDecisionMin = 0.45f; // seconds
+        float aiDecisionMax = 1.00f; // seconds
+
+        float aiApproachDistance = 1.20f;
+        float aiRetreatDistance = 0.70f;
+
+        float aiBlockChance = 0.30f;             // 0..1 chance to defend vs incoming punch
+        float aiRecoveryChancePerFrame = 0.05f;  // 0..1 chance each frame while down
         // ── Stun (from landing a punch on a blocking opponent) ─────
         float stunnedTimer = 0.0f;    // While > 0, this fighter cannot act
         static constexpr float STUN_DURATION = 0.8f; // seconds of stun
