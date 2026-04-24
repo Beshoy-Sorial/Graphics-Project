@@ -32,12 +32,38 @@ namespace our {
     // This will load all the textures defined in "data"
     // data must be in the form:
     //    { texture_name : "path/to/image", ... }
+    //
+    // Special inline syntax for solid-colour textures (no file needed):
+    //    { texture_name : "color:R,G,B,A" }   (0-255 integers)
+    // e.g. "col_red" : "color:217,38,38,255"
     template<>
     void AssetLoader<Texture2D>::deserialize(const nlohmann::json& data) {
         if(data.is_object()){
             for(auto& [name, desc] : data.items()){
                 std::string path = desc.get<std::string>();
-                assets[name] = texture_utils::loadImage(path);
+                if(path.rfind("color:", 0) == 0) {
+                    // Parse "color:R,G,B,A" into a 1x1 RGBA texture
+                    std::string csv = path.substr(6); // after "color:"
+                    uint8_t rgba[4] = {255, 255, 255, 255};
+                    int idx = 0;
+                    std::string tok;
+                    for(char c : csv + ',') {
+                        if(c == ',') {
+                            if(idx < 4) rgba[idx++] = (uint8_t)std::stoi(tok);
+                            tok.clear();
+                        } else tok += c;
+                    }
+                    Texture2D* tex = new Texture2D();
+                    tex->bind();
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0,
+                                 GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                    Texture2D::unbind();
+                    assets[name] = tex;
+                } else {
+                    assets[name] = texture_utils::loadImage(path);
+                }
             }
         }
     };

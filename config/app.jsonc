@@ -30,10 +30,27 @@
       "samplers": { "default": {} },
       "textures": {
         "ring":  "assets/textures/ring.png",
-        // Additional textures used by the lit materials
         "grass": "assets/textures/grass_ground_d.jpg",
         "moon":  "assets/textures/moon.jpg",
-        "wood":  "assets/textures/wood.jpg"
+        "wood":  "assets/textures/wood.jpg",
+        // ── Inline solid-colour textures for fighter lit materials ─────────
+        // "color:R,G,B,A" is parsed by AssetLoader<Texture2D> into a 1×1
+        // GPU texture — no external PNG files needed. Fighters now respond
+        // fully to all 7 arena lights (diffuse, specular glints, rim light).
+        "skin_tex":  "color:242,199,165,255",
+        "col_red":   "color:217,38,38,255",
+        "col_blue":  "color:38,89,217,255",
+        "col_white": "color:230,230,230,255",
+        "col_green": "color:25,178,25,255",
+        "col_yellow":"color:204,178,25,255",
+        "col_purple":"color:127,25,178,255",
+        "col_cyan":  "color:25,178,204,255",
+        "col_orange":"color:229,127,25,255",
+        "col_black": "color:51,51,51,255",
+        "spec_mid":  "color:128,128,128,255",
+        "spec_hi":   "color:220,220,220,255",
+        "rough_mid": "color:128,128,128,255",
+        "rough_lo":  "color:64,64,64,255"
       },
       "meshes": {
         "torso":     "assets/models/torso.obj",
@@ -46,66 +63,72 @@
         "plane":     "assets/models/plane.obj"
       },
       "materials": {
-        // ── Fighter / referee body materials (tinted — flat color) ──────────
+        // ── Fighter / referee body materials (lit — Phong shading, responds to all lights) ──
+        // Using lit shader with solid-color albedo textures so Phong lighting
+        // (diffuse shading, specular highlights, rim light, spot beam) are
+        // fully visible on every fighter body part.
         "skin": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.95, 0.78, 0.65, 1.0]
-        },
-        "skin_yellow": {
-          "type": "tinted", "shader": "tinted",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [1.0, 0.9, 0.0, 1.0]
+          "albedo_map": "skin_tex", "specular_map": "spec_mid", "roughness_map": "rough_mid",
+          "sampler": "default"
         },
         "torso_red": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.85, 0.15, 0.15, 1.0]
+          "albedo_map": "col_red", "specular_map": "spec_mid", "roughness_map": "rough_mid",
+          "sampler": "default"
         },
         "torso_blue": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.15, 0.35, 0.85, 1.0]
+          "albedo_map": "col_blue", "specular_map": "spec_mid", "roughness_map": "rough_mid",
+          "sampler": "default"
         },
         "torso_white": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.9, 0.9, 0.9, 1.0]
+          "albedo_map": "col_white", "specular_map": "spec_hi", "roughness_map": "rough_lo",
+          "sampler": "default"
         },
         "torso_green": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.1, 0.7, 0.1, 1.0]
+          "albedo_map": "col_green", "specular_map": "spec_mid", "roughness_map": "rough_mid",
+          "sampler": "default"
         },
         "torso_yellow": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.8, 0.7, 0.1, 1.0]
+          "albedo_map": "col_yellow", "specular_map": "spec_mid", "roughness_map": "rough_mid",
+          "sampler": "default"
         },
         "torso_purple": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.5, 0.1, 0.7, 1.0]
+          "albedo_map": "col_purple", "specular_map": "spec_mid", "roughness_map": "rough_mid",
+          "sampler": "default"
         },
         "torso_cyan": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.1, 0.7, 0.8, 1.0]
+          "albedo_map": "col_cyan", "specular_map": "spec_mid", "roughness_map": "rough_mid",
+          "sampler": "default"
         },
         "torso_orange": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.9, 0.5, 0.1, 1.0]
+          "albedo_map": "col_orange", "specular_map": "spec_mid", "roughness_map": "rough_mid",
+          "sampler": "default"
         },
         "torso_black": {
-          "type": "tinted", "shader": "tinted",
+          "type": "lit", "shader": "lit",
           "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "tint": [0.2, 0.2, 0.2, 1.0]
+          "albedo_map": "col_black", "specular_map": "spec_mid", "roughness_map": "rough_mid",
+          "sampler": "default"
         },
 
         // ── Environment materials (lit — full Phong with texture maps) ───────
-        // Ring canvas: albedo=ring.png, specular=wood.jpg, roughness=moon.jpg
-        // Lights will cast warm/red/blue highlights on the canvas surface.
         "ring_mat": {
           "type": "lit",
           "shader": "lit",
@@ -115,9 +138,6 @@
           "roughness_map": "moon",
           "sampler": "default"
         },
-
-        // Arena floor: albedo=grass, roughness=moon, AO=moon
-        // The directional and corner lights cast colored gradients across the floor.
         "floor_mat": {
           "type": "lit",
           "shader": "lit",
