@@ -91,78 +91,20 @@
         "plane":     "assets/models/plane.obj"
       },
       "materials": {
-        // ── Fighter / referee body materials (lit — Phong shading, responds to all lights) ──
-        // Using lit shader with solid-color albedo textures so Phong lighting
-        // (diffuse shading, specular highlights, rim light, spot beam) are
-        // fully visible on every fighter body part.
-        "skin": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "skin_tex", "specular_map": "spec_mid", "roughness_map": "rough_mid",
-          "sampler": "default"
-        },
-        "torso_red": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_red", "specular_map": "spec_mid", "roughness_map": "rough_mid",
-          "sampler": "default"
-        },
-        "torso_blue": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_blue", "specular_map": "spec_mid", "roughness_map": "rough_mid",
-          "sampler": "default"
-        },
-        "torso_white": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_white", "specular_map": "spec_hi", "roughness_map": "rough_lo",
-          "sampler": "default"
-        },
-        "torso_green": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_green", "specular_map": "spec_mid", "roughness_map": "rough_mid",
-          "sampler": "default"
-        },
-        "torso_yellow": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_yellow", "specular_map": "spec_mid", "roughness_map": "rough_mid",
-          "sampler": "default"
-        },
-        "torso_purple": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_purple", "specular_map": "spec_mid", "roughness_map": "rough_mid",
-          "sampler": "default"
-        },
-        "torso_cyan": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_cyan", "specular_map": "spec_mid", "roughness_map": "rough_mid",
-          "sampler": "default"
-        },
-        "torso_orange": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_orange", "specular_map": "spec_mid", "roughness_map": "rough_mid",
-          "sampler": "default"
-        },
-        "torso_black": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_black", "specular_map": "spec_mid", "roughness_map": "rough_mid",
-          "sampler": "default"
-        },
-
-        // ── skin_yellow — LitMaterial for stun-flash effect ────────────────
-        "skin_yellow": {
-          "type": "lit", "shader": "lit",
-          "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } },
-          "albedo_map": "col_yellow", "specular_map": "spec_hi", "roughness_map": "rough_lo",
-          "sampler": "default"
-        },
+        // ── Fighter / referee body materials (tinted — flat color, no lighting) ──
+        // Fighters show the exact color chosen in the character select menu.
+        // Arena lights (spot, point, directional) only affect the ring canvas and floor.
+        "skin":        { "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.95, 0.78, 0.65, 1.0] },
+        "torso_red":   { "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.85, 0.15, 0.15, 1.0] },
+        "torso_blue":  { "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.15, 0.35, 0.85, 1.0] },
+        "torso_white": { "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.90, 0.90, 0.90, 1.0] },
+        "torso_green": { "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.10, 0.70, 0.10, 1.0] },
+        "torso_yellow":{ "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.80, 0.70, 0.10, 1.0] },
+        "torso_purple":{ "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.50, 0.10, 0.70, 1.0] },
+        "torso_cyan":  { "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.10, 0.70, 0.80, 1.0] },
+        "torso_orange":{ "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.90, 0.50, 0.10, 1.0] },
+        "torso_black": { "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.22, 0.22, 0.22, 1.0] },
+        "skin_yellow": { "type": "tinted", "shader": "tinted", "pipelineState": { "faceCulling": { "enabled": false }, "depthTesting": { "enabled": true } }, "tint": [0.90, 0.80, 0.10, 1.0] },
 
         // ── Audience materials (tinted — flat color; crowd doesn't need arena lighting) ──
         // Audience members are background characters. Using tinted shader keeps them
