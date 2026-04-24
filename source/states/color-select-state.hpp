@@ -3,6 +3,7 @@
 #include <application.hpp>
 #include <imgui.h>
 #include <glm/glm.hpp>
+#include <vector>
 #include "../common/tournament-manager.hpp"
 
 class ColorSelectState : public our::State {
@@ -12,16 +13,7 @@ private:
         glm::vec4 color;
     };
 
-    std::vector<ArenaColor> arenaColors = {
-        {"Dark Gray",     glm::vec4(0.18f, 0.18f, 0.18f, 1.0f)},
-        {"White",         glm::vec4(0.9f,  0.9f,  0.9f,  1.0f)},
-        {"Deep Blue",     glm::vec4(0.1f,  0.2f,  0.5f,  1.0f)},
-        {"Forest Green",  glm::vec4(0.1f,  0.4f,  0.1f,  1.0f)},
-        {"Dark Red",      glm::vec4(0.5f,  0.1f,  0.1f,  1.0f)},
-        {"Golden",        glm::vec4(0.7f,  0.6f,  0.1f,  1.0f)},
-        {"Purple",        glm::vec4(0.4f,  0.1f,  0.5f,  1.0f)},
-        {"Ocean Blue",    glm::vec4(0.1f,  0.5f,  0.7f,  1.0f)},
-    };
+    std::vector<ArenaColor> arenaColors;
 
     int selectedColorIndex = 0;
 
@@ -29,6 +21,35 @@ public:
     void onInitialize() override {
         // Unlock mouse for UI interaction
         getApp()->getMouse().unlockMouse(getApp()->getWindow());
+
+        arenaColors = {
+            {"Dark Gray",     glm::vec4(0.18f, 0.18f, 0.18f, 1.0f)},
+            {"White",         glm::vec4(0.9f,  0.9f,  0.9f,  1.0f)},
+            {"Deep Blue",     glm::vec4(0.1f,  0.2f,  0.5f,  1.0f)},
+            {"Forest Green",  glm::vec4(0.1f,  0.4f,  0.1f,  1.0f)},
+            {"Dark Red",      glm::vec4(0.5f,  0.1f,  0.1f,  1.0f)},
+            {"Golden",        glm::vec4(0.7f,  0.6f,  0.1f,  1.0f)},
+            {"Purple",        glm::vec4(0.4f,  0.1f,  0.5f,  1.0f)},
+            {"Ocean Blue",    glm::vec4(0.1f,  0.5f,  0.7f,  1.0f)},
+        };
+
+        const auto &config = getApp()->getConfig();
+        if (config.contains("scene") && config["scene"].contains("arenaColorOptions") &&
+            config["scene"]["arenaColorOptions"].is_array()) {
+            std::vector<ArenaColor> loadedColors;
+            for (const auto &entry : config["scene"]["arenaColorOptions"]) {
+                if (!entry.is_object() || !entry.contains("name") || !entry.contains("color")) continue;
+                if (!entry["name"].is_string() || !entry["color"].is_array() || entry["color"].size() < 3) continue;
+
+                glm::vec4 color(1.0f);
+                color.r = entry["color"][0].get<float>();
+                color.g = entry["color"][1].get<float>();
+                color.b = entry["color"][2].get<float>();
+                color.a = entry["color"].size() > 3 ? entry["color"][3].get<float>() : 1.0f;
+                loadedColors.push_back({entry["name"].get<std::string>(), color});
+            }
+            if (!loadedColors.empty()) arenaColors = loadedColors;
+        }
         
         // Try to find the current color in the list
         auto &tm = our::TournamentManager::getInstance();
