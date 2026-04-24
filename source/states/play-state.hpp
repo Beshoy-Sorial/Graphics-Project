@@ -10,6 +10,7 @@
 #include <systems/player-controller.hpp>
 #include <asset-loader.hpp>
 #include <miniaudio.h>
+#include <vector>
 #include "../common/tournament-manager.hpp"
 
 // This state shows how to use the ECS framework and deserialization.
@@ -54,16 +55,44 @@ class Playstate : public our::State
       
         audienceSystem.setAudioEngine(&audioEngine);
 
-       
         int numRows = 3;
-        int peoplePerRow[3] = {40, 50, 60}; 
+        std::vector<int> peoplePerRow = {40, 50, 60};
         float startRadius = 7.5f;
-        float rowSpacing = 1.5f; 
-        float heightStep = 0.9f; 
+        float rowSpacing = 1.5f;
+        float heightStep = 0.9f;
+        float angleRandomOffset = 0.2f;
+        std::vector<std::string> torsoColors = {
+            "aud_red", "aud_blue", "aud_green", "aud_yellow",
+            "aud_purple", "aud_cyan", "aud_orange", "aud_black"
+        };
+
+        if (config.contains("audience") && config["audience"].is_object()) {
+            auto &audienceConfig = config["audience"];
+            numRows = audienceConfig.value("numRows", numRows);
+            startRadius = audienceConfig.value("startRadius", startRadius);
+            rowSpacing = audienceConfig.value("rowSpacing", rowSpacing);
+            heightStep = audienceConfig.value("heightStep", heightStep);
+            angleRandomOffset = audienceConfig.value("angleRandomOffset", angleRandomOffset);
+
+            if (audienceConfig.contains("peoplePerRow") && audienceConfig["peoplePerRow"].is_array()) {
+                peoplePerRow.clear();
+                for (const auto &count : audienceConfig["peoplePerRow"]) {
+                    if (count.is_number_integer()) peoplePerRow.push_back(count.get<int>());
+                }
+            }
+
+            if (audienceConfig.contains("torsoMaterials") && audienceConfig["torsoMaterials"].is_array()) {
+                torsoColors.clear();
+                for (const auto &materialName : audienceConfig["torsoMaterials"]) {
+                    if (materialName.is_string()) torsoColors.push_back(materialName.get<std::string>());
+                }
+            }
+        }
 
         
         for(int row = 0; row < numRows; row++) {
-            int count = peoplePerRow[row];
+            int count = row < (int)peoplePerRow.size() ? peoplePerRow[row] : 0;
+            if (count <= 0) continue;
             float currentRadius = startRadius + (row * rowSpacing);
             float currentBaseY = row * heightStep; 
 
@@ -72,7 +101,7 @@ class Playstate : public our::State
                 float angle = (float)i * (glm::pi<float>() * 2.0f / count);
                 
                 
-                float randomOffset = ((rand() % 100 / 100.0f) - 0.5f) * 0.2f;
+                float randomOffset = ((rand() % 100 / 100.0f) - 0.5f) * angleRandomOffset;
                 float finalAngle = angle + randomOffset;
 
                 
@@ -89,9 +118,8 @@ class Playstate : public our::State
                 
                 // Audience uses tinted (flat-color) materials so arena lights
                 // (especially the purple rim) don't make crowd look psychedelic.
-                std::string torsoColors[] = {"aud_red", "aud_blue", "aud_green", "aud_yellow", "aud_purple", "aud_cyan", "aud_orange", "aud_black"};
-                int colorIndex = rand() % 8;
-                std::string selectedColor = torsoColors[colorIndex];
+                int colorIndex = torsoColors.empty() ? 0 : rand() % (int)torsoColors.size();
+                std::string selectedColor = torsoColors.empty() ? "aud_red" : torsoColors[colorIndex];
 
                 
                 auto* mrTorso = spectator->addComponent<our::MeshRendererComponent>();
