@@ -87,7 +87,9 @@ class Playstate : public our::State
                 audComp->basePositionY = currentBaseY; 
 
                 
-                std::string torsoColors[] = {"torso_red", "torso_blue", "torso_green", "torso_yellow", "torso_purple", "torso_cyan", "torso_orange", "torso_black"};
+                // Audience uses tinted (flat-color) materials so arena lights
+                // (especially the purple rim) don't make crowd look psychedelic.
+                std::string torsoColors[] = {"aud_red", "aud_blue", "aud_green", "aud_yellow", "aud_purple", "aud_cyan", "aud_orange", "aud_black"};
                 int colorIndex = rand() % 8;
                 std::string selectedColor = torsoColors[colorIndex];
 
@@ -105,7 +107,7 @@ class Playstate : public our::State
                 head->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f);
                 auto* mrHead = head->addComponent<our::MeshRendererComponent>();
                 mrHead->mesh = our::AssetLoader<our::Mesh>::get("head");
-                mrHead->material = our::AssetLoader<our::Material>::get("skin");
+                mrHead->material = our::AssetLoader<our::Material>::get("aud_skin");
 
                 
                 our::Entity* rightArm = world.add();
@@ -284,15 +286,17 @@ class Playstate : public our::State
         }
 
         // Apply the selected arena colour tint to the Ring canvas and Floor.
-        // Both use LitMaterial so we cast to that; the tint is multiplied into
-        // the albedo inside lit.frag via the "material_tint" uniform.
-        for (auto entity : world.getEntities()) {
-            if (entity->name == "Ring" || entity->name == "Floor") {
-                auto* mr = entity->getComponent<our::MeshRendererComponent>();
-                if (mr) {
-                    auto* litMat = dynamic_cast<our::LitMaterial*>(mr->material);
-                    if (litMat) {
-                        litMat->tint = glm::vec3(tm.selectedArenaColor);
+        // Only when arenaColorSelected=true; otherwise keep the default white
+        // tint so the scene renders with natural colours before any choice is made.
+        if (tm.arenaColorSelected) {
+            for (auto entity : world.getEntities()) {
+                if (entity->name == "Ring" || entity->name == "Floor") {
+                    auto* mr = entity->getComponent<our::MeshRendererComponent>();
+                    if (mr) {
+                        auto* litMat = dynamic_cast<our::LitMaterial*>(mr->material);
+                        if (litMat) {
+                            litMat->tint = glm::vec3(tm.selectedArenaColor);
+                        }
                     }
                 }
             }
