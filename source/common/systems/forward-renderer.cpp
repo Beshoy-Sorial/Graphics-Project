@@ -189,8 +189,8 @@ namespace our
                 command.center = glm::vec3(command.localToWorld * glm::vec4(0, 0, 0, 1));
                 command.mesh = meshRenderer->mesh;
                 command.material = meshRenderer->material;
-                // Skip if mesh or material is not loaded (asset missing / typo in config)
-                if (!command.mesh || !command.material) continue;
+                // Skip if mesh, material, or shader is missing (asset typo / load failure)
+                if (!command.mesh || !command.material || !command.material->shader) continue;
                 // if it is transparent, we add it to the transparent commands list
                 if (command.material->transparent)
                 {
