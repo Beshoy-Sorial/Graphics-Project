@@ -10,10 +10,18 @@
 #include <array>
 #include <functional>
 #include "../common/tournament-manager.hpp"
+#include <ecs/world.hpp>
+#include <systems/forward-renderer.hpp>
+
+namespace our
+{
+  extern int g_WeatherMode;
+}
 
 // This struct is used to store the location and size of a button and the code
 // it should execute when clicked
-struct Button {
+struct Button
+{
   // The position (of the top-left corner) of the button and its size in pixels
   glm::vec2 position, size;
   // The function that should be excuted when the button is clicked. It takes no
@@ -23,14 +31,16 @@ struct Button {
   // This function returns true if the given vector v is inside the button.
   // Otherwise, false is returned. This is used to check if the mouse is
   // hovering over the button.
-  bool isInside(const glm::vec2 &v) const {
+  bool isInside(const glm::vec2 &v) const
+  {
     return position.x <= v.x && position.y <= v.y &&
            v.x <= position.x + size.x && v.y <= position.y + size.y;
   }
 
   // This function returns the local to world matrix to transform a rectangle of
   // size 1x1 (and whose top-left corner is at the origin) to be the button.
-  glm::mat4 getLocalToWorld() const {
+  glm::mat4 getLocalToWorld() const
+  {
     return glm::translate(glm::mat4(1.0f),
                           glm::vec3(position.x, position.y, 0.0f)) *
            glm::scale(glm::mat4(1.0f), glm::vec3(size.x, size.y, 1.0f));
@@ -39,7 +49,8 @@ struct Button {
 
 // This state shows how to use some of the abstractions we created to make a
 // menu.
-class Menustate : public our::State {
+class Menustate : public our::State
+{
 
   // A meterial holding the menu shader and the menu texture to draw
   our::TexturedMaterial *menuMaterial;
@@ -54,7 +65,11 @@ class Menustate : public our::State {
   // An array of the button that we can interact with
   std::array<Button, 2> buttons;
 
-  void onInitialize() override {
+  our::World world;
+  our::ForwardRenderer renderer;
+
+  void onInitialize() override
+  {
     // First, we create a material for the menu's background
     menuMaterial = new our::TexturedMaterial();
     // Here, we load the shader that will be used to draw the background
@@ -143,18 +158,35 @@ class Menustate : public our::State {
     buttons[1].size = {0.0f, 0.0f};
     buttons[1].action = []() {};
 
+    auto &config = getApp()->getConfig()["scene"];
+    if (config.contains("assets"))
+    {
+      our::deserializeAllAssets(config["assets"]);
+    }
+    if (config.contains("world"))
+    {
+      world.deserialize(config["world"]);
+    }
+
+    auto size = getApp()->getFrameBufferSize();
+    renderer.initialize(size, config["renderer"]);
+
     // Ensure mouse is unlocked for character selection
     getApp()->getMouse().unlockMouse(getApp()->getWindow());
   }
 
-  void onDraw(double deltaTime) override {
+  void onDraw(double deltaTime) override
+  {
     // Get a reference to the keyboard object
     auto &keyboard = getApp()->getKeyboard();
 
-    if (keyboard.justPressed(GLFW_KEY_SPACE)) {
+    if (keyboard.justPressed(GLFW_KEY_SPACE))
+    {
       // If the space key is pressed in this frame, go to the bracket state
       getApp()->changeState("bracket");
-    } else if (keyboard.justPressed(GLFW_KEY_ESCAPE)) {
+    }
+    else if (keyboard.justPressed(GLFW_KEY_ESCAPE))
+    {
       // If the escape key is pressed in this frame, exit the game
       getApp()->close();
     }
@@ -166,8 +198,10 @@ class Menustate : public our::State {
     // If the mouse left-button is just pressed, check if the mouse was inside
     // any menu button. If it was inside a menu button, run the action of the
     // button.
-    if (mouse.justPressed(0)) {
-      for (auto &button : buttons) {
+    if (mouse.justPressed(0))
+    {
+      for (auto &button : buttons)
+      {
         if (button.isInside(mousePosition))
           button.action();
       }
@@ -192,23 +226,18 @@ class Menustate : public our::State {
     // defind the scale in pixels.
     glm::mat4 M = glm::scale(glm::mat4(1.0f), glm::vec3(size.x, size.y, 1.0f));
 
-    // First, we apply the fading effect.
-    time += (float)deltaTime;
-    // Then we render the menu background (Solid Red)
-    // Clear with red color
-    glClearColor(0.8f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Render the 3D world as a background instead of a solid red clear
+    renderer.render(&world);
 
-    // Skip drawing the rectangle with texture if we just want a solid background
-    // but we can also just draw a tinted rect
-    menuMaterial->setup();
-    menuMaterial->shader->set("transform", VP * M);
-    // rectangle->draw(); // Comment out to just use glClearColor
+    // Apply the fading effect logic if needed.
+    time += (float)deltaTime;
 
     // For every button, check if the mouse is inside it. If the mouse is
     // inside, we draw the highlight rectangle over it.
-    for (auto &button : buttons) {
-      if (button.isInside(mousePosition)) {
+    for (auto &button : buttons)
+    {
+      if (button.isInside(mousePosition))
+      {
         highlightMaterial->setup();
         highlightMaterial->shader->set("transform",
                                        VP * button.getLocalToWorld());
@@ -217,7 +246,8 @@ class Menustate : public our::State {
     }
   }
 
-  void onImmediateGui() override {
+  void onImmediateGui() override
+  {
     // Character Selection Window
     ImGuiIO &io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
@@ -232,7 +262,8 @@ class Menustate : public our::State {
     const auto &chars = tm.characters;
 
     ImGui::Columns(4, "CharacterGrid", false);
-    for (int i = 0; i < (int)chars.size(); ++i) {
+    for (int i = 0; i < (int)chars.size(); ++i)
+    {
       ImGui::PushID(i);
 
       // Button background color based on character signature color
@@ -244,16 +275,19 @@ class Menustate : public our::State {
 
       // If this character is selected, show a border or highlight
       bool isSelected = (tm.selectedCharacterIndex == i);
-      if (isSelected) {
+      if (isSelected)
+      {
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 4.0f);
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 1, 1));
       }
 
-      if (ImGui::Button(chars[i].name.c_str(), ImVec2(130, 130))) {
+      if (ImGui::Button(chars[i].name.c_str(), ImVec2(130, 130)))
+      {
         tm.selectedCharacterIndex = i;
       }
 
-      if (isSelected) {
+      if (isSelected)
+      {
         ImGui::PopStyleColor();
         ImGui::PopStyleVar();
       }
@@ -274,15 +308,26 @@ class Menustate : public our::State {
                 selected.speed);
 
     ImGui::Spacing();
-    ImGui::Text("Select Difficulty:");
-    const char* difficultyItems[] = {"Easy", "Medium", "Hard", "Difficult"};
-    int difficultyIndex = static_cast<int>(tm.selectedDifficulty);
-    if (ImGui::Combo("##difficulty", &difficultyIndex, difficultyItems, IM_ARRAYSIZE(difficultyItems))) {
-        tm.selectedDifficulty = static_cast<our::DifficultyLevel>(difficultyIndex);
+    ImGui::Text("Select Weather Condition:");
+    const char *weatherItems[] = {"Sunny", "Rainy", "Snowy"};
+    int weatherIndex = our::g_WeatherMode;
+    if (ImGui::Combo("##weather", &weatherIndex, weatherItems, IM_ARRAYSIZE(weatherItems)))
+    {
+      our::g_WeatherMode = weatherIndex;
     }
-    
+
     ImGui::Spacing();
-    if (ImGui::Button("START TOURNAMENT", ImVec2(-1, 50))) {
+    ImGui::Text("Select Difficulty:");
+    const char *difficultyItems[] = {"Easy", "Medium", "Hard", "Difficult"};
+    int difficultyIndex = static_cast<int>(tm.selectedDifficulty);
+    if (ImGui::Combo("##difficulty", &difficultyIndex, difficultyItems, IM_ARRAYSIZE(difficultyItems)))
+    {
+      tm.selectedDifficulty = static_cast<our::DifficultyLevel>(difficultyIndex);
+    }
+
+    ImGui::Spacing();
+    if (ImGui::Button("START TOURNAMENT", ImVec2(-1, 50)))
+    {
       tm.reset(); // Clear old progress for a new run
       this->getApp()->changeState("bracket");
     }
@@ -290,11 +335,19 @@ class Menustate : public our::State {
     ImGui::End();
   }
 
-  void onDestroy() override {
+  void onDestroy() override
+  {
+    // Destroy 3D scene resources manually loaded for menu preview
+    renderer.destroy();
+    world.clear();
+    our::clearAllAssets();
+
     // Delete all the allocated resources
     delete rectangle;
-    if (menuMaterial->texture) delete menuMaterial->texture;
-    if (menuMaterial->sampler) delete menuMaterial->sampler;
+    if (menuMaterial->texture)
+      delete menuMaterial->texture;
+    if (menuMaterial->sampler)
+      delete menuMaterial->sampler;
     delete menuMaterial->shader;
     delete menuMaterial;
     delete highlightMaterial->shader;

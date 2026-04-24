@@ -23,6 +23,7 @@
 
 namespace our
 {
+  extern int g_WeatherMode;
 
   // PlayerControllerSystem handles:
   //   1. WASD movement with smooth torso rotation toward movement dir.
@@ -327,9 +328,10 @@ namespace our
             else
             {
               // AI recovery: simulate mashing 'X' logic
-              // AI mashing speed is random
-              if ((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) < fighter->aiRecoveryChancePerFrame)
-              { // ~3 clicks per second on average at 60fps
+              // Fix: Make it frame-rate independent by scaling the chance with deltaTime
+              float clicksPerSecond = fighter->aiRecoveryChancePerFrame * 60.0f;
+              if ((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) < (clicksPerSecond * deltaTime))
+              {
                 fighter->recoveryClicks++;
               }
               int required = 25 + (fighter->knockdownCount - 1) * 15;
@@ -1083,6 +1085,13 @@ namespace our
         }
       }
 
+      ImGui::End();
+
+      // ── Weather Overlay ─────────────────────────────────────────
+      ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_FirstUseEver);
+      ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
+      const char *weathers[] = {"Sun", "Rain", "Snow"};
+      ImGui::Combo("Weather", &our::g_WeatherMode, weathers, IM_ARRAYSIZE(weathers));
       ImGui::End();
 
       // ── Match Result Overlay ───────────────────────────────────────
