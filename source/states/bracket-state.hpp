@@ -31,6 +31,7 @@ class BracketState : public our::State {
 
         ImGui::Text("Round: %s", tm.currentRound == 1 ? "Quarterfinals" : 
                                  (tm.currentRound == 2 ? "Semifinals" : "Finals"));
+        ImGui::Text("Difficulty: %s", tm.difficultyName());
         ImGui::Separator();
         ImGui::Spacing();
 

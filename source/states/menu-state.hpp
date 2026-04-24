@@ -222,7 +222,7 @@ class Menustate : public our::State {
     ImGuiIO &io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
                             ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(700, 560), ImGuiCond_Always);
 
     ImGui::Begin("Select Your Fighter", nullptr,
                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
@@ -273,6 +273,14 @@ class Menustate : public our::State {
     ImGui::Text("Stats: Strength %.1fx, Speed %.1fx", selected.strength,
                 selected.speed);
 
+    ImGui::Spacing();
+    ImGui::Text("Select Difficulty:");
+    const char* difficultyItems[] = {"Easy", "Medium", "Hard", "Difficult"};
+    int difficultyIndex = static_cast<int>(tm.selectedDifficulty);
+    if (ImGui::Combo("##difficulty", &difficultyIndex, difficultyItems, IM_ARRAYSIZE(difficultyItems))) {
+        tm.selectedDifficulty = static_cast<our::DifficultyLevel>(difficultyIndex);
+    }
+    
     ImGui::Spacing();
     if (ImGui::Button("START TOURNAMENT", ImVec2(-1, 50))) {
       tm.reset(); // Clear old progress for a new run
