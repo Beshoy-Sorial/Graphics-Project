@@ -75,7 +75,13 @@ class BracketState : public our::State {
             }
         } else {
             if (ImGui::Button("START NEXT MATCH", ImVec2(-1, 50))) {
-                getApp()->changeState("play");
+                // Only go to color selection on the first match
+                if (tm.currentRound == 1 && !tm.arenaColorSelected) {
+                    tm.arenaColorSelected = true;
+                    getApp()->changeState("color-select");
+                } else {
+                    getApp()->changeState("play");
+                }
             }
         }
 
