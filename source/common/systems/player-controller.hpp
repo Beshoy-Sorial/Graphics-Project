@@ -73,7 +73,6 @@ namespace our
     static constexpr float ARM_REST_X = -0.3f;     // idle: slight forward lean
     static constexpr float ARM_DEFEND_X = -1.8f;   // defend: arms cover head
     static constexpr float ARM_PUNCH_PEAK = -1.4f; // peak of punch extension
-    
 
   public:
     void enter(Application *app) { this->app = app; }
@@ -302,46 +301,49 @@ namespace our
           torso->localTransform.position.z = fighter->basePosition.z;
 
           // Recovery Logic
-          if (fighter->isPlayer)
+          if (fighter->stateTimer < 11.0f)
           {
-            if (kb.justPressed(GLFW_KEY_X))
+            if (fighter->isPlayer)
             {
-              fighter->recoveryClicks++;
-            }
-            // Required clicks: 25 + 15 per subsequent knockdown (Way more clicks)
-            int required = 25 + (fighter->knockdownCount - 1) * 15;
-            if (fighter->recoveryClicks >= required)
-            {
-              fighter->state = FighterState::IDLE;
-              fighter->currentHealth =
-                  fighter->maxHealth * 0.5f; // Recover half health
-              fighter->stateTimer = 0.0f;
-              if (fighter->soundPlaying)
+              if (kb.justPressed(GLFW_KEY_X))
               {
-                ma_sound_stop(&countSound);
-                fighter->soundPlaying = false;
+                fighter->recoveryClicks++;
+              }
+              // Required clicks: 25 + 15 per subsequent knockdown (Way more clicks)
+              int required = 25 + (fighter->knockdownCount - 1) * 15;
+              if (fighter->recoveryClicks >= required)
+              {
+                fighter->state = FighterState::IDLE;
+                fighter->currentHealth =
+                    fighter->maxHealth * 0.5f; // Recover half health
+                fighter->stateTimer = 0.0f;
+                if (fighter->soundPlaying)
+                {
+                  ma_sound_stop(&countSound);
+                  fighter->soundPlaying = false;
+                }
               }
             }
-          }
-          else
-          {
-            // AI recovery: simulate mashing 'X' logic
-            // AI mashing speed is random
-            if ((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) < fighter->aiRecoveryChancePerFrame)
-            { // ~3 clicks per second on average at 60fps
-              fighter->recoveryClicks++;
-            }
-            int required = 25 + (fighter->knockdownCount - 1) * 15;
-            if (fighter->recoveryClicks >= required)
+            else
             {
-              fighter->state = FighterState::IDLE;
-              fighter->currentHealth = fighter->maxHealth * 0.5f;
-              // IMPORTANT: Clear stateTimer so they don't trigger KO logic below
-              fighter->stateTimer = 0.0f;
-              if (fighter->soundPlaying)
+              // AI recovery: simulate mashing 'X' logic
+              // AI mashing speed is random
+              if ((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) < fighter->aiRecoveryChancePerFrame)
+              { // ~3 clicks per second on average at 60fps
+                fighter->recoveryClicks++;
+              }
+              int required = 25 + (fighter->knockdownCount - 1) * 15;
+              if (fighter->recoveryClicks >= required)
               {
-                ma_sound_stop(&countSound);
-                fighter->soundPlaying = false;
+                fighter->state = FighterState::IDLE;
+                fighter->currentHealth = fighter->maxHealth * 0.5f;
+                // IMPORTANT: Clear stateTimer so they don't trigger KO logic below
+                fighter->stateTimer = 0.0f;
+                if (fighter->soundPlaying)
+                {
+                  ma_sound_stop(&countSound);
+                  fighter->soundPlaying = false;
+                }
               }
             }
           }
@@ -446,17 +448,19 @@ namespace our
               bool playerPunchingNow = (playerFighter->leftPunchTimer > 0.0f || playerFighter->rightPunchTimer > 0.0f);
               bool playerStunned = (playerFighter->stunnedTimer > 0.0f);
               bool playerKnockedDown = (playerFighter->state == FighterState::KNOCKED_DOWN);
-              
+
               // Determine if the player's back is turned towards the AI
               float playerYaw = playerTorso->localTransform.rotation.y;
               glm::vec3 playerForward = glm::normalize(glm::vec3(std::sin(playerYaw), 0.0f, std::cos(playerYaw)));
               glm::vec3 toAI = glm::vec3(-dx, 0.0f, -dz);
-              if (glm::length(toAI) > 0.001f) toAI = glm::normalize(toAI);
+              if (glm::length(toAI) > 0.001f)
+                toAI = glm::normalize(toAI);
               bool playerBackTurned = (glm::dot(playerForward, toAI) < -0.3f); // Angle > 107 degrees away
 
               bool aiHealthLow = (fighter->currentHealth < fighter->maxHealth * 0.25f);
 
-              if (playerBackTurned && dist <= 1.5f && fighter->aiDecisionTimer > 0.6f) {
+              if (playerBackTurned && dist <= 1.5f && fighter->aiDecisionTimer > 0.6f)
+              {
                 fighter->aiDecisionTimer = 0.5f; // Ready to punch soon, but not instantly, avoiding machine-gun punches
               }
 
@@ -699,16 +703,20 @@ namespace our
               if (!fighter->isPlayer || !isFirstPerson)
               {
                 float targetYaw = 0.0f;
-                if (isReferee) {
+                if (isReferee)
+                {
                   // Always face the exact center of the active fighters
                   glm::vec3 fightCenter = playerFighter->basePosition;
-                  if (cachedAIFighter) {
+                  if (cachedAIFighter)
+                  {
                     fightCenter = (fightCenter + cachedAIFighter->basePosition) * 0.5f;
                   }
                   float dx = fightCenter.x - fighter->basePosition.x;
                   float dz = fightCenter.z - fighter->basePosition.z;
                   targetYaw = std::atan2(dx, dz);
-                } else {
+                }
+                else
+                {
                   targetYaw = std::atan2(move.x, move.z);
                 }
 
@@ -746,15 +754,19 @@ namespace our
               if (!fighter->isPlayer && fighter->state != FighterState::KNOCKED_DOWN)
               {
                 float targetYaw = 0.0f;
-                if (isReferee) {
+                if (isReferee)
+                {
                   glm::vec3 fightCenter = playerFighter->basePosition;
-                  if (cachedAIFighter) {
+                  if (cachedAIFighter)
+                  {
                     fightCenter = (fightCenter + cachedAIFighter->basePosition) * 0.5f;
                   }
                   float dx = fightCenter.x - fighter->basePosition.x;
                   float dz = fightCenter.z - fighter->basePosition.z;
                   targetYaw = std::atan2(dx, dz);
-                } else {
+                }
+                else
+                {
                   float dx = playerFighter->basePosition.x - fighter->basePosition.x;
                   float dz = playerFighter->basePosition.z - fighter->basePosition.z;
                   targetYaw = std::atan2(dx, dz);
@@ -819,9 +831,12 @@ namespace our
                 }
                 else
                 {
-                  if (isReferee) {
+                  if (isReferee)
+                  {
                     child->localTransform.scale = glm::vec3(0.152f);
-                  } else {
+                  }
+                  else
+                  {
                     child->localTransform.scale = glm::vec3(0.191f); // Original fighter head scale
                   }
                 }
