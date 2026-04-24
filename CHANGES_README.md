@@ -704,29 +704,31 @@ White `[0.9, 0.9, 0.9]` and dark grey `[0.18, 0.18, 0.18]` both have **sat = 0**
 (equal R/G/B), so `blendT = 0` and `mix` returned `albedo_raw` unchanged.
 The orange ring.png texture showed through regardless of which color was chosen.
 
-### Fix — `assets/shaders/lit.frag` — Two-axis blend
+### Fix v2 — `assets/shaders/lit.frag` — Direct tint replacement (final)
 
-Added a **brightness-remap axis** that activates for achromatic (grey/white) tints:
+The first attempt at a fix (`greyAlbedo = vec3(lum + targetGrey - 0.5)`) still had a bug:
+dark textures like the grass floor (lum ≈ 0.3) gave `0.3 + 0.18 − 0.5 = −0.02 → black`.
+The ring canvas went pinkish because the warm-grade post-process pushed the computed grey warm.
+
+**Final fix:** for grey/white tints, replace the albedo with `tintRaw` directly — the lighting
+then runs on the exact chosen color, just as it would on any normally-colored surface.
 
 ```glsl
-float targetGrey = (tintRaw.r + tintRaw.g + tintRaw.b) / 3.0;
-
-// Weight = 0 when tint=(1,1,1) (fighters stay unchanged)
-// Weight is strong for dark-grey or near-white arena selections
-float greyWeight = clamp((1.0 - sat) * abs(1.0 - targetGrey) * 5.0, 0.0, 1.0);
-vec3  greyAlbedo = vec3(clamp(lum + targetGrey - 0.5, 0.0, 1.0));
+// (1-targetGrey)*10 → 0 when tint=(1,1,1), ≥1 for any other grey shade
+float greyWeight = clamp((1.0 - sat) * (1.0 - targetGrey) * 10.0, 0.0, 1.0);
 
 float hueWeight = clamp(sat * 1.5, 0.0, 1.0);
-vec3  tinted    = mix(albedo_raw, recolored,  hueWeight);
-vec3  albedo    = mix(tinted,     greyAlbedo, greyWeight);
+vec3  tinted    = mix(albedo_raw, recolored, hueWeight);  // coloured picks
+vec3  albedo    = mix(tinted,     tintRaw,   greyWeight); // grey/white picks
 ```
 
-### How each case now works
+### How each case works (final)
 
 | Arena color | tint value | sat | greyWeight | hueWeight | Result |
 |---|---|---|---|---|---|
 | **Default / fighters** | `[1.0, 1.0, 1.0]` | 0 | **0** | 0 | Unchanged — natural albedo ✓ |
-| **White** | `[0.9, 0.9, 0.9]` | 0 | **~0.5** | 0 | Canvas brightens toward near-white ✓ |
-| **Dark Grey** | `[0.18, 0.18, 0.18]` | 0 | **~0.9** | 0 | Canvas goes dark grey ✓ |
-| **Deep Blue** | `[0.1, 0.2, 0.5]` | 0.80 | ~0.1 | 1.0 | Vivid blue recolor (hue axis) ✓ |
-| **Red** | `[0.8, 0.1, 0.1]` | 0.875 | ~0.05 | 1.0 | Vivid red (hue axis) ✓ |
+| **White** | `[0.9, 0.9, 0.9]` | 0 | **1.0** | 0 | Albedo = [0.9,0.9,0.9]; lights shade it ✓ |
+| **Dark Grey** | `[0.18, 0.18, 0.18]` | 0 | **1.0** | 0 | Albedo = [0.18,0.18,0.18]; dark but lit ✓ |
+| **Mid Grey** | `[0.5, 0.5, 0.5]` | 0 | **1.0** | 0 | Albedo = [0.5,0.5,0.5]; medium grey ✓ |
+| **Deep Blue** | `[0.1, 0.2, 0.5]` | 0.80 | ~0 | 1.0 | Vivid blue hue-recolor ✓ |
+| **Red** | `[0.8, 0.1, 0.1]` | 0.875 | ~0 | 1.0 | Vivid red hue-recolor ✓ |
