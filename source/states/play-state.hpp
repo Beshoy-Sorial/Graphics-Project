@@ -355,8 +355,10 @@ class Playstate : public our::State
 
     void onImmediateGui() override
     {
-        // Draw the ATTACK / DEFEND mode HUD in the top-right corner
-        playerController.drawHUD(lastDeltaTime);
+        // Draw the ATTACK / DEFEND mode HUD in the top-right corner.
+        // Passing &renderer allows drawHUD to toggle the grayscale postprocess
+        // effect automatically when the player is knocked out.
+        playerController.drawHUD(lastDeltaTime, &renderer);
     }
 
     void onDestroy() override
