@@ -754,32 +754,106 @@ void main() {
 
 The engine is built on a State Machine pattern. A "State" is essentially an entire screen or phase of the game.
 
-### `menu-state.hpp`
-- This is the first thing that loads. It renders the character selection screen.
-- It uses the `ImGui` library to draw buttons. 
-- When you select a character, it writes your choice into the `TournamentManager` (the Singleton we discussed earlier) so the game remembers who you picked.
-- Clicking "Start" destroys the Menu State and loads the Bracket State.
+### 12.1 `menu-state.hpp`
+This is the first thing that loads. It renders the character selection screen.
 
-### `bracket-state.hpp`
-- This is the transition screen between fights.
-- It reads `TournamentManager::currentRound` to determine who your opponent is.
-- It calculates the AI's difficulty scaling (increasing their health or speed) based on the round number.
-- Clicking "FIGHT!" transitions to the Color Select State.
+```cpp
+void onImmediateGui() override {
+    ImGui::Begin("Select Your Fighter");
+    auto &tm = our::TournamentManager::getInstance();
+    const auto &chars = tm.characters;
+```
+**Explanation:** `ImGui::Begin` creates a floating UI window. We grab the `TournamentManager` to access the list of 8 predefined characters.
 
-### `color-select-state.hpp`
-- Before entering the ring, this state lets the player customize the environment.
-- It dynamically reads the `arenaColorOptions` from `app.jsonc` and uses `ImGui` to generate a grid of colored buttons.
-- The `ImGui` buttons actually change their own background color to match the arena colors!
-- When you click "START MATCH", it saves your color choice into the `TournamentManager` and finally loads the Play State.
+```cpp
+    if (ImGui::Button(chars[i].name.c_str(), ImVec2(130, 130))) {
+        tm.selectedCharacterIndex = i;
+    }
+```
+**Explanation:** For each character, we draw a 130x130 pixel button. If the user clicks it, we save their choice into the `TournamentManager` so it survives when we delete the menu.
 
-### `play-state.hpp`
-- This is the actual 3D boxing game. 
-- In the `onInitialize()` function, it dynamically parses the `app.jsonc` file, loads the 3D models (`.obj`), creates the Materials, and builds the ECS (Entity Component System) world.
-- In the `onDraw()` function, it executes the master game loop 60 times a second: 
-  1. Updates the `PlayerControllerSystem`
-  2. Updates the `AudienceSystem`
-  3. Updates the `MovementSystem`
-  4. Finally, calls `ForwardRenderer::render()` to draw everything to the screen.
+```cpp
+    if (ImGui::Button("START TOURNAMENT", ImVec2(-1, 50))) {
+      tm.reset();
+      this->getApp()->changeState("bracket");
+    }
+```
+**Explanation:** Clicking Start resets the tournament (Round 1) and tells the engine to destroy `menu-state` and load `bracket-state`.
+
+### 12.2 `bracket-state.hpp`
+This is the transition screen between fights.
+
+```cpp
+void onImmediateGui() override {
+    ImGui::Text("Round: %s", tm.currentRound == 1 ? "Quarterfinals" : 
+                             (tm.currentRound == 2 ? "Semifinals" : "Finals"));
+```
+**Explanation:** We read the `currentRound` integer. We use ternary operators `? :` to print whether it's the Quarterfinals, Semifinals, or Finals.
+
+```cpp
+    ImGui::Columns(3, "BracketColumns", true);
+    // Column 1: Quarterfinals
+    drawMatch("Match 1", player.name, "Blue Frost", tm.currentRound == 1);
+```
+**Explanation:** We split the screen into 3 columns to draw a visual tournament tree. `drawMatch` is a helper function that draws a box with two names.
+
+```cpp
+    if (ImGui::Button("START NEXT MATCH", ImVec2(-1, 50))) {
+        if (tm.currentRound == 1 && !tm.arenaColorSelected) {
+            tm.arenaColorSelected = true;
+            getApp()->changeState("color-select");
+        } else {
+            getApp()->changeState("play");
+        }
+    }
+```
+**Explanation:** If we are on Round 1 and haven't picked a color yet, we go to `color-select`. Otherwise, we go straight to the 3D ring (`play`).
+
+### 12.3 `color-select-state.hpp`
+Before entering the ring, this state lets the player customize the environment.
+
+```cpp
+void onInitialize() override {
+    const auto &config = getApp()->getConfig();
+    for (const auto &entry : config["scene"]["arenaColorOptions"]) {
+        // Parse name and color arrays...
+        loadedColors.push_back({entry["name"].get<std::string>(), color});
+    }
+}
+```
+**Explanation:** This parses the `app.jsonc` file looking for the `arenaColorOptions` array. It loads options like "Dark Gray" and "Forest Green" dynamically without recompiling C++.
+
+```cpp
+void onImmediateGui() override {
+    ImVec4 col = ImVec4(arenaColors[i].color.r, arenaColors[i].color.g, arenaColors[i].color.b, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_Button, col);
+```
+**Explanation:** We use `ImGui::PushStyleColor` to physically change the color of the UI button to match the color of the arena floor it represents!
+
+### 12.4 `play-state.hpp`
+This is the actual 3D boxing game. 
+
+```cpp
+void onInitialize() override {
+    auto& config = getApp()->getConfig();
+    our::deserializeAllAssets(config["assets"]);
+    world.deserialize(config["world"]);
+    renderer.initialize(getApp()->getFrameBufferSize(), config["renderer"]);
+}
+```
+**Explanation:** We parse the JSON file to load the 3D `.obj` models, the texture `.jpg` files, and we spawn the entire `world` (Entities and Components). Finally, we initialize the `ForwardRenderer` with the screen size.
+
+```cpp
+void onDraw(double deltaTime) override {
+    playerController.update(&world, (float)deltaTime);
+    audienceSystem.update(&world, (float)deltaTime);
+    movementSystem.update(&world, (float)deltaTime);
+    cameraController.update(&world, (float)deltaTime);
+    
+    renderer.render(&world);
+}
+```
+**Explanation:** The master game loop! 60 times a second, it executes the math for punching, updates the audience animations, moves the camera, and finally calls `render()` to draw the pixels to the screen.
 
 ---
 
