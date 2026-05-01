@@ -200,9 +200,12 @@ namespace our {
 
 ---
 
-## 4. THE MATH: `combat-system.hpp`
+## 4. THE MATH: `combat-system.hpp` (Collision & Hit Detection)
 
-This file handles exactly one thing: If I click punch, did I hit the enemy?
+This file handles exactly one thing: Collision detection for punches. If I click punch, did I hit the enemy?
+
+### 4.1 Proximity-Based Collision Detection
+Instead of using expensive bounding-box physics, this engine uses highly optimized **3D Proximity Math**. We calculate the Euclidean distance (`glm::distance`) between the attacker's body and the defender's body. If the distance is less than the `punchRange` (1.5 units), a collision is registered!
 
 ```cpp
 #pragma once
