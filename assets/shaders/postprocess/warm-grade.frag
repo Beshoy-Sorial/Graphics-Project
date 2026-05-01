@@ -10,6 +10,9 @@ out vec4 frag_color;
 // Pushes the palette toward gold/amber (boxing arena atmosphere) while
 // darkening the screen edges to focus attention on the ring center.
 
+// Grayscale intensity: 0.0 = full color, 1.0 = full grayscale (player KO effect)
+uniform float u_grayscale;
+
 void main(){
     frag_color = texture(tex, tex_coord);
 
@@ -27,4 +30,9 @@ void main(){
     // Darken corners; the exponent (0.75) controls how quickly it fades
     vec2 ndc = tex_coord * 2.0 - 1.0;
     frag_color.rgb /= 1.0 + dot(ndc, ndc) * 0.75;
+
+    // ── Grayscale (KO effect) ────────────────────────────────────────
+    // Convert to luminance and mix with original colour based on u_grayscale
+    float gray = dot(frag_color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    frag_color.rgb = mix(frag_color.rgb, vec3(gray), u_grayscale);
 }

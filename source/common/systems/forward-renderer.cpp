@@ -357,6 +357,7 @@ namespace our
         }
 
         // If there is a postprocess material, apply postprocessing
+        // If there is a postprocess material, apply postprocessing
         if (postprocessMaterial)
         {
             // TODO: (Req 11) Return to the default framebuffer
@@ -367,6 +368,15 @@ namespace our
 
             glBindVertexArray(postProcessVertexArray);
             glDrawArrays(GL_TRIANGLES, 0, 3);
+        }
+    }
+
+    void ForwardRenderer::setGrayscale(float intensity)
+    {
+        if (postprocessMaterial && postprocessMaterial->shader)
+        {
+            postprocessMaterial->shader->use();
+            postprocessMaterial->shader->set("u_grayscale", intensity);
         }
     }
 

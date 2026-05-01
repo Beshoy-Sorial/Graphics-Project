@@ -58,6 +58,9 @@ namespace our
         void destroy();
         // This function should be called every frame to draw the given world
         void render(World *world);
+        // Set u_grayscale uniform on the postprocess shader.
+        // intensity: 0.0 = full colour, 1.0 = full grayscale (player KO).
+        void setGrayscale(float intensity);
     };
 
 }
