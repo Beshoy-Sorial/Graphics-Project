@@ -747,3 +747,63 @@ void main() {
 - Set up the Framebuffer Object (FBO) for Postprocessing.
 - Wrote `vignette.frag` and the `dot` product math to calculate Grayscale luminance.
 - Created the 40,000 point sprite 3D Weather System and the modulo `mod()` falling logic.
+
+---
+
+## 12. THE APPLICATION STATES
+
+The engine is built on a State Machine pattern. A "State" is essentially an entire screen or phase of the game.
+
+### `menu-state.hpp`
+- This is the first thing that loads. It renders the character selection screen.
+- It uses the `ImGui` library to draw buttons. 
+- When you select a character, it writes your choice into the `TournamentManager` (the Singleton we discussed earlier) so the game remembers who you picked.
+- Clicking "Start" destroys the Menu State and loads the Bracket State.
+
+### `bracket-state.hpp`
+- This is the transition screen between fights.
+- It reads `TournamentManager::currentRound` to determine who your opponent is.
+- It calculates the AI's difficulty scaling (increasing their health or speed) based on the round number.
+- Clicking "FIGHT!" transitions to the Play State.
+
+### `play-state.hpp`
+- This is the actual 3D boxing game. 
+- In the `onInitialize()` function, it dynamically parses the `app.jsonc` file, loads the 3D models (`.obj`), creates the Materials, and builds the ECS (Entity Component System) world.
+- In the `onDraw()` function, it executes the master game loop 60 times a second: 
+  1. Updates the `PlayerControllerSystem`
+  2. Updates the `AudienceSystem`
+  3. Updates the `MovementSystem`
+  4. Finally, calls `ForwardRenderer::render()` to draw everything to the screen.
+
+---
+
+## 13. THE PROCEDURAL AUDIENCE SYSTEM
+
+Instead of placing hundreds of audience members by hand in the JSON file, the engine uses **Procedural Generation** to build a dynamic crowd around the boxing ring.
+
+### 13.1 Generating the Crowd (`play-state.hpp`)
+When the `PlayState` loads, it reads the `"audience"` section of `app.jsonc` (which defines things like `numRows` and `peoplePerRow`).
+
+```cpp
+float angle = (float)i * (glm::pi<float>() * 2.0f / count);
+spectator->localTransform.position = glm::vec3(cos(finalAngle) * currentRadius, currentBaseY, sin(finalAngle) * currentRadius);
+spectator->localTransform.rotation.y = std::atan2(-spectator->position.x, -spectator->position.z);
+```
+**Explanation:** 
+- It uses `cos()` and `sin()` to calculate exact coordinates in a perfect circle around the boxing ring (the `currentRadius`).
+- It uses `std::atan2()` to calculate the exact angle required so that every single audience member is perfectly rotated to face the center of the ring!
+
+### 13.2 Making them Cheer (`audience-system.hpp`)
+The `AudienceSystem` runs every frame and checks the status of the fighters.
+
+```cpp
+if (someoneGotHit || someoneKnockedDown) {
+    audience->jumpTimer += deltaTime * 15.0f; 
+    entity->localTransform.position.y = audience->basePositionY + std::abs(std::sin(audience->jumpTimer)) * 0.4f;
+}
+```
+**Explanation:** 
+- If the `combat-system.hpp` registers a hit or a knockdown, a boolean flag is triggered.
+- The `AudienceSystem` loops through all audience members and starts advancing their `jumpTimer`.
+- It uses the absolute value of a sine wave `std::abs(std::sin(...))` to rapidly bounce their Y-coordinate up and down by `0.4f` meters, simulating the crowd jumping out of their seats.
+- It simultaneously triggers `ma_engine_play_sound` via the `miniaudio` library to play the crowd cheering MP3!
