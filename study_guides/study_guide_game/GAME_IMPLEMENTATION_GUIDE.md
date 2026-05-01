@@ -764,7 +764,13 @@ The engine is built on a State Machine pattern. A "State" is essentially an enti
 - This is the transition screen between fights.
 - It reads `TournamentManager::currentRound` to determine who your opponent is.
 - It calculates the AI's difficulty scaling (increasing their health or speed) based on the round number.
-- Clicking "FIGHT!" transitions to the Play State.
+- Clicking "FIGHT!" transitions to the Color Select State.
+
+### `color-select-state.hpp`
+- Before entering the ring, this state lets the player customize the environment.
+- It dynamically reads the `arenaColorOptions` from `app.jsonc` and uses `ImGui` to generate a grid of colored buttons.
+- The `ImGui` buttons actually change their own background color to match the arena colors!
+- When you click "START MATCH", it saves your color choice into the `TournamentManager` and finally loads the Play State.
 
 ### `play-state.hpp`
 - This is the actual 3D boxing game. 
