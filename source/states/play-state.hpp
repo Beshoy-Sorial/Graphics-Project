@@ -328,6 +328,18 @@ class Playstate : public our::State
                     }
                 }
             }
+        } else {
+            for (auto entity : world.getEntities()) {
+                if (entity->name == "Ring" || entity->name == "Floor") {
+                    auto* mr = entity->getComponent<our::MeshRendererComponent>();
+                    if (mr) {
+                        auto* litMat = dynamic_cast<our::LitMaterial*>(mr->material);
+                        if (litMat) {
+                            litMat->albedo_map = our::AssetLoader<our::Texture2D>::get("ring");
+                        }
+                    }
+                }
+            }
         }
     }
 
