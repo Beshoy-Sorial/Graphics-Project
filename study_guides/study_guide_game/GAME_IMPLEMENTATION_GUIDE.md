@@ -887,3 +887,68 @@ if (someoneGotHit || someoneKnockedDown) {
 - The `AudienceSystem` loops through all audience members and starts advancing their `jumpTimer`.
 - It uses the absolute value of a sine wave `std::abs(std::sin(...))` to rapidly bounce their Y-coordinate up and down by `0.4f` meters, simulating the crowd jumping out of their seats.
 - It simultaneously triggers `ma_engine_play_sound` via the `miniaudio` library to play the crowd cheering MP3!
+
+---
+
+## 14. HOW TEXTURES WORK (THE GRAPHICS CARD)
+
+When you see a complex image (like the wood floor or the fighter's face) on a 3D model, it is the result of Texture Mapping. Here is exactly how it flows from your hard drive to your monitor:
+
+### 1. Loading the Image
+In `onInitialize()`, the engine reads `app.jsonc`. When it sees a texture path (like `"assets/textures/wood.jpg"`), it uses a library called `stb_image` to decode the JPG file into a giant array of raw RGB pixel colors in C++.
+
+### 2. Sending to VRAM
+The C++ engine calls `glTexImage2D`. This takes the massive array of RGB pixels from your computer's RAM and copies it directly into the Graphics Card's ultra-fast Video RAM (VRAM). It is now assigned an ID (e.g., `Texture 1`).
+
+### 3. The Material Setup
+In `ForwardRenderer.cpp`, before drawing a model, we "bind" the texture:
+```cpp
+glActiveTexture(GL_TEXTURE0);
+material->albedo_map->bind();
+shader->set("material.albedo_map", 0);
+```
+**Explanation:** This tells the Graphics Card, "Wake up Texture Unit 0, put the wood image in it, and tell the Shader to look at Unit 0 when asking for the `albedo_map`."
+
+### 4. The Fragment Shader (`forward-pass.frag`)
+Finally, the Graphics Card runs the GLSL math for every single pixel on your screen:
+```glsl
+vec4 tex_color = texture(material.albedo_map, tex_coord);
+material.albedo = tex_color.rgb * material.tint;
+```
+**Explanation:** The `texture()` function asks the Graphics Card to look up the exact pixel color from the wood image using the 3D model's `tex_coord` (UV coordinates). It returns the exact color, which is then passed into our lighting math!
+
+---
+
+## 15. HOW THE PLAYER STAYS ABOVE THE RING (GRAVITY & Y-AXIS)
+
+Why doesn't the player fall through the floor? Why don't they fly into the sky? Because we strictly control the **Y-Axis**.
+
+In `fighter.hpp`, the player's logical position is stored as:
+```cpp
+glm::vec3 basePosition = {0.0f, 0.0f, 0.0f};
+```
+
+### 1. Locked Movement
+In `player-controller.hpp`, when you press W, A, S, or D, the engine calculates a `move` vector.
+```cpp
+if (kb.isPressed(GLFW_KEY_W)) move.z -= 1.0f;
+if (kb.isPressed(GLFW_KEY_D)) move.x += 1.0f;
+// Notice: move.y is NEVER touched!
+```
+Because we only ever add math to `.x` and `.z`, the `.y` coordinate of `basePosition` remains permanently locked at `0.0f`.
+
+### 2. Applying the Position
+At the end of the frame, the Engine forces the 3D Torso to snap to the `basePosition`:
+```cpp
+if (fighter->state != FighterState::KNOCKED_DOWN) {
+    torso->localTransform.position = fighter->basePosition;
+}
+```
+**Explanation:** This guarantees that the fighter's feet are always exactly touching the `0.0` elevation of the floor plane.
+
+### 3. What happens when you get knocked out?
+If you get punched and your health hits 0, the rules change! Inside the `tickKnockdown()` function:
+```cpp
+torso->localTransform.position.y = glm::mix(torso->localTransform.position.y, 0.4f, 3.0f * deltaTime);
+```
+**Explanation:** The engine stops snapping the player to the `basePosition`. Instead, it uses `glm::mix` to smoothly animate the Torso's Y-coordinate down to `0.4f` (lying flat on the floor) so the body doesn't float in the air while horizontal!
