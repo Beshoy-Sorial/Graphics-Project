@@ -128,7 +128,16 @@ public:
         ImGui::Spacing();
         ImGui::Spacing();
         
-        if (ImGui::Button("START MATCH", ImVec2(-1, 50))) {
+        if (ImGui::Button("START WITH SELECTED COLOR", ImVec2(-1, 50))) {
+            tm.arenaColorSelected = true;
+            getApp()->changeState("play");
+        }
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        if (ImGui::Button("USE DEFAULT RING TEXTURE", ImVec2(-1, 50))) {
+            tm.arenaColorSelected = false;
             getApp()->changeState("play");
         }
 
