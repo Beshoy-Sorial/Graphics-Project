@@ -1,141 +1,251 @@
-# Graphics Engine Project
+<div align="center">
 
-A custom 3D Graphics Engine built using C++, OpenGL 3.3, and GLFW. This project implements a complete rendering pipeline, from basic shader management to a complex Entity-Component-System (ECS) framework with forward rendering and post-processing.
+---
 
-## 🚀 Project Flow: From Input to Screen
+## ✨ Highlights
 
-This section describes how data and control flow through the engine in every frame.
+<table>
+<tr>
+<td width="50%" valign="top">
 
-### 1. The Global Life Cycle
-The application follows a strict state-based architecture. 
+## 📸 Screenshots
 
-### **The Heart of the Engine: `Application::run`**
-This main loop coordinates everything. Every frame, it polls events, updates the current state, and swaps the buffers.
+|             Knockdown & referee count             |         The crowd goes wild         |
+| :------------------------------------------------: | :----------------------------------: |
+|    ![Knockdown](docs/screenshots/knockdown.jpg)    | ![Crowd](docs/screenshots/crowd.jpg) |
+|            **First-person mode**            |     **Fighter selection**     |
+| ![First person](docs/screenshots/first-person.jpg) |  ![Menu](docs/screenshots/menu.jpg)  |
 
-```cpp
-while(!glfwWindowShouldClose(window)){
-    glfwPollEvents(); // 1. Handle hardware events (keys, mouse)
+## 🕹️ Controls
 
-    double current_frame_time = glfwGetTime();
-    // 2. State-specific logic and drawing
-    if(currentState) currentState->onDraw(current_frame_time - last_frame_time);
-    last_frame_time = current_frame_time;
+| Action                                | Input                                                                                                |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Move (relative to the camera)         | **W A S D**                                                                                    |
+| Left / right punch*(attack stance)* | **Left / Right mouse button**                                                                  |
+| Switch attack ⇄ guard stance         | **T**                                                                                          |
+| Full guard*(guard stance)*          | no button held — blocks everything, takes a little chip damage                                      |
+| Parry left / right*(guard stance)*  | **hold Left / Right mouse button** — guard the side the punch comes from to stun the attacker |
+| Get up after a knockdown              | **mash X**                                                                                     |
+| Broadcast camera ⇄ first person      | **V**                                                                                          |
+| Cycle weather                         | **F1**                                                                                         |
+| Screenshot                            | **F12** (saved to `screenshots/`)                                                            |
+| Back to menu / quit                   | **Esc**                                                                                        |
 
-    glfwSwapBuffers(window); // 3. Push to screen
+> 💡 **Tip:** the AI pulls its arm back before every punch — that is your window to raise your guard.
+> Catching an opponent in the middle of their own punch deals a **COUNTER** hit for 1.5× damage.
+
+## 🚀 Getting Started
+
+### Requirements
+
+- **CMake 3.5+**
+- A **C++17** compiler — Visual Studio 2017+ (MSVC), GCC 9+ or Clang 5+
+- A GPU with **OpenGL 3.3** support
+
+All libraries are bundled in [`vendor/`](vendor) — nothing else to install.
+On **Linux** you also need the OpenGL / X11 development packages:
+
+```bash
+sudo apt install build-essential cmake libgl1-mesa-dev libglew-dev \
+                 libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+```
+
+### Build
+
+```bash
+git clone https://github.com/asermohamed1/Graphics-Project.git
+cd Graphics-Project
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+```
+
+Using **VS Code**? Open the folder with the *CMake Tools* extension, pick a compiler kit and press **Build**.
+
+### Run
+
+Always run the game **from the project root** (asset paths are relative to it):
+
+```bash
+./bin/GAME_APPLICATION            # Linux
+./bin/GAME_APPLICATION.exe        # Windows
+```
+
+| Option        | Meaning                                                     | Example                             |
+| ------------- | ----------------------------------------------------------- | ----------------------------------- |
+| `-c=<file>` | Configuration / scene to load (default`config/app.jsonc`) | `-c=config/sky-test/test-0.jsonc` |
+| `-f=<n>`    | Close automatically after*n* frames (used by the tests)   | `-f=2`                            |
+
+## 🏆 How a Tournament Plays Out
+
+```mermaid
+flowchart LR
+    A[Fighter selection<br/>difficulty · weather] --> B[Bracket]
+    B --> C[Arena colour pick<br/><i>first match only</i>]
+    C --> D[🥊 Match]
+    B --> D
+    D -- "K.O. / T.K.O. win" --> B
+    D -- "you get knocked out" --> A
+    B -- "won the Final" --> E[🏆 Champion]
+```
+
+| Round        | Opponent        | Style              |
+| ------------ | --------------- | ------------------ |
+| Quarterfinal | 🔵 Blue Frost   | fast               |
+| Semifinal    | 🟡 Gold Lion    | heavy hitter       |
+| Final        | ⚫ Black Shadow | strong*and* fast |
+
+Opponents get stronger every round, on top of the difficulty you picked.
+
+## 🧱 Engine Architecture
+
+The engine uses an **Entity-Component-System** design and a **state machine** for the screens.
+Scenes, materials and lights are all described in JSON ([`config/app.jsonc`](config/app.jsonc)).
+
+```mermaid
+flowchart TB
+    main[main.cpp] --> app[Application<br/>window · input · main loop]
+    app --> states[States<br/>Menu · Bracket · Colour select · Play · Test states]
+    states --> world[ECS World]
+    world --> ent[Entities<br/>transform hierarchy]
+    ent --> comp[Components<br/>Camera · MeshRenderer · Light · Fighter · Audience]
+    states --> systems[Systems]
+    systems --> pc[PlayerController<br/>input · camera · HUD]
+    pc --> combat[CombatSystem]
+    pc --> ai[AISystem]
+    pc --> anim[FighterAnimationSystem]
+    systems --> aud[AudienceSystem]
+    systems --> fr[ForwardRenderer]
+```
+
+### One frame of rendering
+
+```mermaid
+flowchart LR
+    S[Shadow map<br/>from the spotlight] --> O[Opaque objects<br/>front-to-back] --> K[Sky panorama] --> T[Transparent objects<br/>back-to-front] --> W[Weather particles]
+    W --> R[MSAA resolve] --> B[Bloom<br/>extract + blur] --> P[Final pass<br/>tone map · grade · vignette · gamma] --> U[ImGui HUD]
+```
+
+All "enhanced" features are switched on per scene from the renderer config, so the original
+requirement scenes keep rendering exactly as specified:
+
+```jsonc
+"renderer": {
+  "sky": "assets/textures/arena/arena_panorama.jpg",
+  "postprocess": "assets/shaders/postprocess/arena-final.frag",
+  "hdr": true,
+  "msaa": 4,
+  "bloom":   { "strength": 0.09, "threshold": 1.1 },
+  "shadows": { "size": 2048 },
+  "ambient": { "sky": [0.03, 0.03, 0.04], "ground": [0.018, 0.013, 0.01] },
+  "fog":     { "color": [0.012, 0.01, 0.012], "density": 0.022 },
+  "weather": true
 }
 ```
 
-```mermaid
-graph TD
-    A[main.cpp] -->|1. Load Config| B(app.jsonc)
-    B -->|2. Initialize| C[our::Application]
-    C -->|3. Register States| D[Menu, Play, Test States]
-    D -->|4. run| E{Main Loop}
-    E -->|Poll Events| F[Input Handling]
-    E -->|Update & Draw| G[Current State]
-    G -->|Change State?| H[nextState = StateB]
-    H -->|End of Frame| I[Switch State]
-    I --> E
-    E -->|glfwWindowShouldClose| J[Cleanup & Exit]
+## 📁 Project Structure
+
+```
+Graphics-Project/
+├── assets/
+│   ├── audio/          # punches, crowd cheer, referee count
+│   ├── models/         # fighter body parts, ring, primitives (+ *_lod.obj for the crowd)
+│   ├── shaders/        # GLSL: lit, shadow, sky, weather, post-processing
+│   └── textures/       # arena panorama, parquet floor, ring
+├── config/             # app.jsonc (the game) + one folder per requirement test
+├── source/
+│   ├── main.cpp
+│   ├── common/
+│   │   ├── components/ # Camera, MeshRenderer, Light, Fighter, Audience…
+│   │   ├── ecs/        # Entity, Transform, World
+│   │   ├── material/   # Materials & pipeline state
+│   │   ├── mesh/       # Mesh + OBJ loader
+│   │   ├── shader/     # Shader program (with #include support)
+│   │   ├── systems/    # Renderer, combat, AI, animation, audience, player controller
+│   │   └── texture/    # Textures, samplers, screenshots
+│   └── states/         # Menu, bracket, play and the requirement test states
+├── expected/           # Reference images for the automated tests
+├── scripts/            # Test runner & image comparison
+├── tools/              # Python asset tools (LOD generation, model fixes)
+└── vendor/             # GLFW, GLAD, GLM, Dear ImGui, utilities
 ```
 
----
+## ✅ Automated Tests
 
-### 2. The Input Pipeline
-How your keystrokes and mouse clicks reach the game logic.
+Every engine requirement (shaders, meshes, transforms, pipeline state, textures, samplers,
+materials, ECS, renderer, sky, post-processing) has reference images in [`expected/`](expected).
+On Windows, run from the project root:
 
-1.  **Hardware Event**: You press a key or move the mouse.
-2.  **GLFW**: Captures the OS event during `glfwPollEvents()`.
-3.  **Application Callbacks**: `application.cpp` uses lambdas to bridge GLFW and our engine:
-    ```cpp
-    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods){
-        auto* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-        if(app) app->getKeyboard().keyEvent(key, scancode, action, mods);
-    });
-    ```
-4.  **Input Classes**: The `our::Keyboard` and `our::Mouse` objects record state (pressed vs. released).
-5.  **State Dispatch**: If the `currentState` overrides event functions, they are called immediately.
-6.  **Polling**: During `onDraw`, states poll for input:
-    ```cpp
-    if(keyboard.justPressed(GLFW_KEY_SPACE)) {
-        getApp()->changeState("play");
-    }
-    ```
-
----
-
-### 3. State Scenarios: Menu vs. Play
-
-The engine behaves differently depending on whether you are in a UI state or a Game state.
-
-#### **Scenario A: The Menu State**
-*   **Logic**: Simple hit-detection. It checks if the `mousePosition` is inside a `Button` rectangle.
-*   **Rendering**: Directly renders a 2D rectangle with the `menuMaterial`.
-    ```cpp
-    menuMaterial->setup(); // Sets shader, texture, and sampler
-    menuMaterial->shader->set("transform", VP * M);
-    rectangle->draw();
-    ```
-*   **Safety**: Uses null-checks for safety:
-    ```cpp
-    if(texture) texture->bind();
-    if(sampler) sampler->bind(0);
-    ```
-
-#### **Scenario B: The Play State (ECS)**
-*   **Logic**: Uses the **Entity-Component-System (ECS)**.
-    *   **World**: A container of all **Entities**.
-    *   **Components**: Data attached to entities (Camera, MeshRenderer, Movement).
-    *   **Systems**: Logic that operates on the world (MovementSystem, FreeCameraController).
-*   **Flow**:
-    1.  `MovementSystem::update`: Updates entity positions based on velocity.
-    2.  `CameraSystem::update`: Moves the camera based on user input.
-    3.  `ForwardRenderer::render`: The heavy lifter.
-
----
-
-### 4. The Rendering Pipeline (Forward Renderer)
-When `renderer.render(&world)` is called, the following steps occur inside the GPU:
-
-```mermaid
-graph LR
-    A[Find Camera] --> B[Collect Renderables]
-    B --> C[Sort Objects]
-    C --> D[Render Opaque]
-    D --> E[Render Sky]
-    E --> F[Render Transparent]
-    F --> G[Post-Processing]
-    G --> H[Final Reflection on Screen]
-```
-
-1.  **Collection**: Finds every entity with a `MeshRendererComponent`.
-2.  **Sorting**: Correct blending requires back-to-front rendering for transparency.
-    ```cpp
-    // Sorting Transparent objects by distance from camera
-    std::sort(transparentCommands.begin(), transparentCommands.end(), 
-        [](const RenderCommand& a, const RenderCommand& b) {
-            return a.depth > b.depth;
-        }
-    );
-    ```
-3.  **Opaque Pass**: Draws solid objects first.
-4.  **Sky Pass**: Rendered with special depth logic (`glDepthFunc(GL_LEQUAL)` and `z=1`).
-5.  **Transparent Pass**: Draws objects with alpha blending.
-6.  **Post-Processing**: Final effects (Vignette, Grayscale) applied to a full-screen quad.
-
----
-
-### 5. Screen Reflection
-The final step in the frame is **Double Buffering**.
-*   All drawing happens on a "back buffer" (invisible).
-*   `glfwSwapBuffers(window)` is called.
-*   The back buffer becomes the "front buffer" and is reflected on your monitor.
-
-## 🛠️ Requirements & Build
-*   **Compiler**: C++17 support (VS 2017+, GCC 9+, Clang 5+).
-*   **Dependencies**: CMake, OpenGL 3.3, GLFW, GLAD, GLM, stb_image, JSON for Modern C++.
-
-To run:
 ```powershell
-./bin/GAME_APPLICATION.exe
+./scripts/run-all.ps1        # renders every test scene into screenshots/
+./scripts/compare-all.ps1    # compares them with the expected images
 ```
+
+Current result: **56 / 56 tests pass.**
+The comparison tool `imgcmp` is in [`scripts/`](scripts) (see `scripts/README-IMPORTANT.txt` for Linux).
+
+## ⚡ Performance
+
+Around **160 FPS at 1280×720** with every effect on (RTX 4060 Laptop), with ~1 300 entities on screen.
+The main tricks:
+
+- **Crowd LODs** — spectators use decimated meshes ([`tools/generate_lods.py`](tools/generate_lods.py)),
+  cutting the crowd from ~87 million triangles per frame down to ~1.1 million
+- **Uniform location caching** and lights uploaded **once per shader per frame**
+- **Front-to-back sorting** of opaque objects so hidden pixels are never shaded
+- **Frustum-culled shadow pass** — only objects under the spotlight are drawn into the shadow map
+- **Half-resolution bloom** with a separable, bilinear-optimized Gaussian blur
+
+## 👥 Team
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://github.com/Beshoy-Sorial">
+        <img src="https://github.com/Beshoy-Sorial.png?size=120" width="100" alt="Beshoy Sorial"><br>
+        <b>Beshoy Sorial</b>
+      </a><br>
+      <sub>@Beshoy-Sorial</sub>
+    </td>
+    <td align="center" width="25%">
+      <a href="https://github.com/asermohamed1">
+        <img src="https://github.com/asermohamed1.png?size=120" width="100" alt="asermohamed1"><br>
+        <b>asermohamed1</b>
+      </a><br>
+      <sub>@asermohamed1</sub>
+    </td>
+    <td align="center" width="25%">
+      <a href="https://github.com/Mohamed-Kamal0">
+        <img src="https://github.com/Mohamed-Kamal0.png?size=120" width="100" alt="Mohamed Kamal"><br>
+        <b>Mohamed Kamal</b>
+      </a><br>
+      <sub>@Mohamed-Kamal0</sub>
+    </td>
+    <td align="center" width="25%">
+      <a href="https://github.com/yaraFarouk">
+        <img src="https://github.com/yaraFarouk.png?size=120" width="100" alt="Yara Ahmed Farouk"><br>
+        <b>Yara Ahmed Farouk</b>
+      </a><br>
+      <sub>@yaraFarouk</sub>
+    </td>
+  </tr>
+</table>
+
+## 🙏 Credits
+
+**Assets** (CC0, from [Poly Haven](https://polyhaven.com)):
+
+- *Circus Arena* panorama — Oliksiy Yakovlyev
+- *Herringbone Parquet* — Sergej Majboroda & Jenelle van Heerden
+
+**Libraries:**
+[GLFW](https://www.glfw.org/) ·
+[GLAD](https://github.com/Dav1dde/glad) ·
+[GLM](https://github.com/g-truc/glm) ·
+[Dear ImGui](https://github.com/ocornut/imgui) ·
+[stb_image](https://github.com/nothings/stb) ·
+[tinyobjloader](https://github.com/tinyobjloader/tinyobjloader) ·
+[nlohmann/json](https://github.com/nlohmann/json) ·
+[miniaudio](https://miniaud.io/) ·
+[flags](https://github.com/sailormoon/flags)
+
+<div align="center">
