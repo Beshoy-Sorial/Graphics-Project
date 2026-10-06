@@ -2,6 +2,7 @@
 #define SHADER_HPP
 
 #include <string>
+#include <unordered_map>
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
@@ -14,6 +15,10 @@ namespace our {
     private:
         //Shader Program Handle (OpenGL object name)
         GLuint program;
+        // Cache of uniform locations. glGetUniformLocation is a slow driver call and the renderer
+        // sets thousands of uniforms per frame, so every name is looked up only once.
+        // (mutable so that link(), which is const, can invalidate it)
+        mutable std::unordered_map<std::string, GLint> uniformLocations;
 
     public:
         ShaderProgram(){
@@ -32,7 +37,11 @@ namespace our {
         }
 
         GLint getUniformLocation(const std::string &name) {
-            return glGetUniformLocation(program, name.c_str());
+            auto it = uniformLocations.find(name);
+            if(it != uniformLocations.end()) return it->second;
+            GLint location = glGetUniformLocation(program, name.c_str());
+            uniformLocations.emplace(name, location);
+            return location;
         }
 
         void set(const std::string &uniform, GLfloat value) {

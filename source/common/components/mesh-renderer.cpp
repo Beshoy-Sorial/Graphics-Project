@@ -9,5 +9,6 @@ namespace our {
         mesh = AssetLoader<Mesh>::get(data["mesh"].get<std::string>());
         materialName = data["material"].get<std::string>();
         material = AssetLoader<Material>::get(materialName);
+        castShadows = data.value("castShadows", castShadows);
     }
 }

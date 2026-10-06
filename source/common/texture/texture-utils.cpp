@@ -12,6 +12,13 @@ our::Texture2D* our::texture_utils::empty(GLenum format, glm::ivec2 size){
     GLenum type = GL_UNSIGNED_BYTE;
     if(format == GL_RGBA8){
         baseFormat = GL_RGBA;
+    } else if(format == GL_RGBA16F || format == GL_RGBA32F){
+        // Floating point (HDR) render targets
+        baseFormat = GL_RGBA;
+        type = GL_FLOAT;
+    } else if(format == GL_RGB16F || format == GL_R11F_G11F_B10F){
+        baseFormat = GL_RGB;
+        type = GL_FLOAT;
     } else if(format == GL_DEPTH_COMPONENT24){
         baseFormat = GL_DEPTH_COMPONENT;
         type = GL_UNSIGNED_INT;

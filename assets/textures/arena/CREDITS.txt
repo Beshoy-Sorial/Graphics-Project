@@ -1,0 +1,8 @@
+All textures in this folder come from Poly Haven (https://polyhaven.com) and are released under CC0
+(public domain). They were downscaled for the project.
+
+arena_panorama.jpg      "Circus Arena" HDRI (tonemapped JPG) by Oliksiy Yakovlyev
+                        https://polyhaven.com/a/circus_arena
+parquet_albedo.jpg      "Herringbone Parquet" by Sergej Majboroda (photography)
+parquet_normal.jpg      and Jenelle van Heerden (processing)
+parquet_roughness.jpg   https://polyhaven.com/a/herringbone_parquet

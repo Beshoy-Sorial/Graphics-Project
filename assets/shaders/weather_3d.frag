@@ -5,6 +5,7 @@ flat in int particleType;
 out vec4 frag_color;
 
 uniform int weatherMode;
+uniform int hdr_pipeline; // 1 = linear HDR pipeline (convert sRGB colors to linear)
 
 void main() {
     if (particleType < 0 || particleColor.a <= 0.0) discard;
@@ -36,4 +37,6 @@ void main() {
         float alpha = clamp((0.5 - dist) * 2.5, 0.0, 1.0);
         frag_color = vec4(particleColor.rgb * 1.2, particleColor.a * alpha);
     }
+
+    if (hdr_pipeline == 1) frag_color.rgb = pow(max(frag_color.rgb, vec3(0.0)), vec3(2.2));
 }

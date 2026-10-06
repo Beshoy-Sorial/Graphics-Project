@@ -226,6 +226,19 @@ class Menustate : public our::State
     // defind the scale in pixels.
     glm::mat4 M = glm::scale(glm::mat4(1.0f), glm::vec3(size.x, size.y, 1.0f));
 
+    // Slowly orbit the camera around the ring (attract mode)
+    for (auto entity : world.getEntities())
+    {
+      if (!entity->getComponent<our::CameraComponent>())
+        continue;
+      float angle = time * 0.12f + 0.6f;
+      glm::vec3 eye(std::sin(angle) * 8.0f, 3.4f, std::cos(angle) * 8.0f);
+      glm::vec3 dir = glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f) - eye);
+      entity->localTransform.position = eye;
+      entity->localTransform.rotation = glm::vec3(std::asin(dir.y), std::atan2(-dir.x, -dir.z), 0.0f);
+      break;
+    }
+
     // Render the 3D world as a background instead of a solid red clear
     renderer.render(&world);
 
@@ -252,7 +265,7 @@ class Menustate : public our::State
     ImGuiIO &io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
                             ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(700, 560), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(720, 590), ImGuiCond_Always);
 
     ImGui::Begin("Select Your Fighter", nullptr,
                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
@@ -281,7 +294,7 @@ class Menustate : public our::State
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 1, 1));
       }
 
-      if (ImGui::Button(chars[i].name.c_str(), ImVec2(130, 130)))
+      if (ImGui::Button(chars[i].name.c_str(), ImVec2(150, 110)))
       {
         tm.selectedCharacterIndex = i;
       }

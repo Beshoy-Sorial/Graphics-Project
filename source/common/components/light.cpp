@@ -21,6 +21,9 @@ namespace our {
 
         innerConeAngle = glm::radians(data.value("innerConeAngle", 15.0f));
         outerConeAngle = glm::radians(data.value("outerConeAngle", 30.0f));
+
+        castShadows  = data.value("castShadows", castShadows);
+        shadowRadius = data.value("shadowRadius", shadowRadius);
     }
 
 }

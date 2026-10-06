@@ -90,94 +90,105 @@ class Playstate : public our::State
         }
 
         
+        // Crowd members are always far from the camera: use the low-poly LOD meshes when available
+        auto crowdMesh = [](const std::string &name) {
+            our::Mesh *lod = our::AssetLoader<our::Mesh>::get(name + "_lod");
+            return lod ? lod : our::AssetLoader<our::Mesh>::get(name);
+        };
+        our::Mesh *crowdTorso = crowdMesh("torso");
+        our::Mesh *crowdHead = our::AssetLoader<our::Mesh>::get("head");
+        our::Mesh *crowdLeftArm = crowdMesh("left_arm"), *crowdRightArm = crowdMesh("right_arm");
+        our::Mesh *crowdLeftLeg = crowdMesh("left_leg"), *crowdRightLeg = crowdMesh("right_leg");
+        our::Material *crowdSkin = our::AssetLoader<our::Material>::get("aud_skin");
+
+        // Bleachers: a ring of steps under every row so the crowd doesn't float in the air
+        auto stepTop = [&](int row) { return 0.35f + row * heightStep; };
+        our::Mesh *cube = our::AssetLoader<our::Mesh>::get("cube");
+        our::Material *bleacherMaterial = our::AssetLoader<our::Material>::get("bleacher");
+        if (cube && bleacherMaterial) {
+            for (int row = 0; row < numRows; row++) {
+                float radius = startRadius + row * rowSpacing;
+                float topY = stepTop(row);
+                const int segments = 40 + row * 8;
+                float segmentLength = glm::two_pi<float>() * radius / segments * 1.04f; // slight overlap, no gaps
+                for (int s = 0; s < segments; s++) {
+                    float angle = (s + 0.5f) * glm::two_pi<float>() / segments;
+                    our::Entity *step = world.add();
+                    step->name = "Bleacher";
+                    float halfHeight = (topY + 0.1f) * 0.5f;
+                    step->localTransform.position = glm::vec3(std::cos(angle) * radius, topY - halfHeight, std::sin(angle) * radius);
+                    step->localTransform.rotation.y = -angle;
+                    // cube.obj spans -1..1, so the scale is half the size
+                    step->localTransform.scale = glm::vec3(rowSpacing * 0.5f, halfHeight, segmentLength * 0.5f);
+                    auto *mr = step->addComponent<our::MeshRendererComponent>();
+                    mr->mesh = cube;
+                    mr->material = bleacherMaterial;
+                    mr->castShadows = false;
+                }
+            }
+        }
+
+        // Creates one body part of a spectator (same hierarchy and offsets as the fighters in app.jsonc)
+        auto addPart = [&](our::Entity *parent, const char *name, our::Mesh *mesh, our::Material *material,
+                           glm::vec3 position, glm::vec3 rotation, float scale) {
+            our::Entity *part = world.add();
+            part->name = name;
+            part->parent = parent;
+            part->localTransform.position = position;
+            part->localTransform.rotation = rotation;
+            part->localTransform.scale = glm::vec3(scale);
+            if (mesh) {
+                auto *mr = part->addComponent<our::MeshRendererComponent>();
+                mr->mesh = mesh;
+                mr->material = material;
+                mr->castShadows = false; // outside the spotlight anyway; keeps the shadow pass cheap
+            }
+            return part;
+        };
+
         for(int row = 0; row < numRows; row++) {
             int count = row < (int)peoplePerRow.size() ? peoplePerRow[row] : 0;
             if (count <= 0) continue;
             float currentRadius = startRadius + (row * rowSpacing);
-            float currentBaseY = row * heightStep; 
 
             for(int i = 0; i < count; i++) {
-                
                 float angle = (float)i * (glm::pi<float>() * 2.0f / count);
-                
-                
                 float randomOffset = ((rand() % 100 / 100.0f) - 0.5f) * angleRandomOffset;
                 float finalAngle = angle + randomOffset;
 
-                
+                // Slight size variation so the crowd doesn't look cloned
+                float size = 0.30f + (rand() % 100) / 100.0f * 0.05f;
+                // The feet are ~2.9 units below the torso origin (in torso space): stand on the step
+                float baseY = stepTop(row) + 2.9f * size;
+
                 our::Entity* spectator = world.add();
                 spectator->name = "Audience";
-                spectator->localTransform.position = glm::vec3(cos(finalAngle) * currentRadius, currentBaseY, sin(finalAngle) * currentRadius);
-                
-               
+                spectator->localTransform.position = glm::vec3(cos(finalAngle) * currentRadius, baseY, sin(finalAngle) * currentRadius);
+                // Face the ring (bodies look along their local +Z)
                 spectator->localTransform.rotation.y = std::atan2(-spectator->localTransform.position.x, -spectator->localTransform.position.z);
-                
-                auto* audComp = spectator->addComponent<our::AudienceComponent>();
-                audComp->basePositionY = currentBaseY; 
+                spectator->localTransform.scale = glm::vec3(size);
 
-                
-                // Audience uses tinted (flat-color) materials so arena lights
-                // (especially the purple rim) don't make crowd look psychedelic.
+                auto* audComp = spectator->addComponent<our::AudienceComponent>();
+                audComp->basePositionY = baseY;
+                audComp->phase = (rand() % 1000) / 1000.0f * glm::two_pi<float>();
+                audComp->enthusiasm = 0.6f + (rand() % 100) / 100.0f * 0.7f;
+
                 int colorIndex = torsoColors.empty() ? 0 : rand() % (int)torsoColors.size();
                 std::string selectedColor = torsoColors.empty() ? "aud_red" : torsoColors[colorIndex];
+                our::Material *shirt = our::AssetLoader<our::Material>::get(selectedColor);
 
-                
                 auto* mrTorso = spectator->addComponent<our::MeshRendererComponent>();
-                mrTorso->mesh = our::AssetLoader<our::Mesh>::get("torso");
-                mrTorso->material = our::AssetLoader<our::Material>::get(selectedColor);
-                spectator->localTransform.scale = glm::vec3(0.45f, 0.45f, 0.45f); 
+                mrTorso->mesh = crowdTorso;
+                mrTorso->material = shirt;
+                mrTorso->castShadows = false;
 
-                
-                our::Entity* head = world.add();
-                head->name = "Head";
-                head->parent = spectator;
-                head->localTransform.position = glm::vec3(0.0f, 1.8f, 0.0f); 
-                head->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f);
-                auto* mrHead = head->addComponent<our::MeshRendererComponent>();
-                mrHead->mesh = our::AssetLoader<our::Mesh>::get("head");
-                mrHead->material = our::AssetLoader<our::Material>::get("aud_skin");
-
-                
-                our::Entity* rightArm = world.add();
-                rightArm->name = "Right_Arm";
-                rightArm->parent = spectator;
-                rightArm->localTransform.position = glm::vec3(0.8f, 1.5f, 0.0f); 
-                rightArm->localTransform.rotation.x = -glm::pi<float>() * 0.8f; 
-                rightArm->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f); 
-                auto* mrRArm = rightArm->addComponent<our::MeshRendererComponent>();
-                mrRArm->mesh = our::AssetLoader<our::Mesh>::get("right_arm");
-                mrRArm->material = our::AssetLoader<our::Material>::get(selectedColor);
-
-                
-                our::Entity* leftArm = world.add();
-                leftArm->name = "Left_Arm";
-                leftArm->parent = spectator;
-                leftArm->localTransform.position = glm::vec3(-0.8f, 1.5f, 0.0f); 
-                leftArm->localTransform.rotation.x = -glm::pi<float>() * 0.8f; 
-                leftArm->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f); 
-                auto* mrLArm = leftArm->addComponent<our::MeshRendererComponent>();
-                mrLArm->mesh = our::AssetLoader<our::Mesh>::get("left_arm");
-                mrLArm->material = our::AssetLoader<our::Material>::get(selectedColor);
-                
-                
-                our::Entity* rightLeg = world.add();
-                rightLeg->name = "Right_Leg";
-                rightLeg->parent = spectator;
-                rightLeg->localTransform.position = glm::vec3(0.35f, 0.0f, 0.0f); 
-                rightLeg->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f); 
-                auto* mrRLeg = rightLeg->addComponent<our::MeshRendererComponent>();
-                mrRLeg->mesh = our::AssetLoader<our::Mesh>::get("right_leg");
-                mrRLeg->material = our::AssetLoader<our::Material>::get(selectedColor);
-
-               
-                our::Entity* leftLeg = world.add();
-                leftLeg->name = "Left_Leg";
-                leftLeg->parent = spectator;
-                leftLeg->localTransform.position = glm::vec3(-0.35f, 0.0f, 0.0f); 
-                leftLeg->localTransform.scale = glm::vec3(0.25f, 0.25f, 0.25f); 
-                auto* mrLLeg = leftLeg->addComponent<our::MeshRendererComponent>();
-                mrLLeg->mesh = our::AssetLoader<our::Mesh>::get("left_leg");
-                mrLLeg->material = our::AssetLoader<our::Material>::get(selectedColor);
+                addPart(spectator, "Head", crowdHead, crowdSkin, glm::vec3(-0.18f, 1.102f, -0.244f), glm::vec3(0.0f, -glm::half_pi<float>(), 0.0f), 0.191f);
+                our::Entity *leftShoulder  = addPart(spectator, "Left_Shoulder",  nullptr, nullptr, glm::vec3( 0.6f, 1.0f, 0.0f), glm::vec3(0.45f, 0.0f, 0.0f), 1.0f);
+                our::Entity *rightShoulder = addPart(spectator, "Right_Shoulder", nullptr, nullptr, glm::vec3(-0.6f, 1.0f, 0.0f), glm::vec3(0.45f, 0.0f, 0.0f), 1.0f);
+                addPart(leftShoulder,  "Left_Arm",  crowdLeftArm,  crowdSkin, glm::vec3(-0.223f, -1.792f, -0.216f), glm::vec3(0.0f), 0.074f);
+                addPart(rightShoulder, "Right_Arm", crowdRightArm, crowdSkin, glm::vec3( 0.223f, -1.792f, -0.216f), glm::vec3(0.0f), 0.074f);
+                addPart(spectator, "Left_Leg",  crowdLeftLeg,  shirt, glm::vec3( 0.368f, -2.92f, -0.135f), glm::vec3(0.0f), 0.28f);
+                addPart(spectator, "Right_Leg", crowdRightLeg, shirt, glm::vec3(-0.368f, -2.92f, -0.135f), glm::vec3(0.0f), 0.28f);
             }
         }
         // Apply selected character identity to the player
@@ -264,6 +275,7 @@ class Playstate : public our::State
                         fighter->aiRetreatDistance = 0.55f;
                         fighter->aiBlockChance = 0.25f;
                         fighter->aiRecoveryChancePerFrame = 0.05f;
+                        fighter->aiWindupTime = 0.42f;
                         break;
 
                     case our::DifficultyLevel::Medium:
@@ -276,6 +288,7 @@ class Playstate : public our::State
                         fighter->aiRetreatDistance = 0.70f;
                         fighter->aiBlockChance = 0.40f;
                         fighter->aiRecoveryChancePerFrame = 0.08f;
+                        fighter->aiWindupTime = 0.30f;
                         break;
 
                     case our::DifficultyLevel::Hard:
@@ -288,6 +301,7 @@ class Playstate : public our::State
                         fighter->aiRetreatDistance = 0.80f;
                         fighter->aiBlockChance = 0.60f;
                         fighter->aiRecoveryChancePerFrame = 0.12f;
+                        fighter->aiWindupTime = 0.22f;
                         break;
 
                     case our::DifficultyLevel::Difficult:
@@ -300,6 +314,7 @@ class Playstate : public our::State
                         fighter->aiRetreatDistance = 0.85f;
                         fighter->aiBlockChance = 0.80f;
                         fighter->aiRecoveryChancePerFrame = 0.15f;
+                        fighter->aiWindupTime = 0.16f;
                         break;
                     }
                 }
@@ -328,30 +343,21 @@ class Playstate : public our::State
                     }
                 }
             }
-        } else {
-            for (auto entity : world.getEntities()) {
-                if (entity->name == "Ring" || entity->name == "Floor") {
-                    auto* mr = entity->getComponent<our::MeshRendererComponent>();
-                    if (mr) {
-                        auto* litMat = dynamic_cast<our::LitMaterial*>(mr->material);
-                        if (litMat) {
-                            litMat->albedo_map = our::AssetLoader<our::Texture2D>::get("ring");
-                        }
-                    }
-                }
-            }
         }
+        // (Without a colour pick the ring keeps its texture and the floor keeps its parquet texture.)
     }
 
     void onDraw(double deltaTime) override
     {
-        lastDeltaTime = (float)deltaTime;
+        // The first frame after loading includes the loading time, and the window can be dragged:
+        // clamp the time step so nothing teleports or jumps.
+        float dt = glm::min((float)deltaTime, 1.0f / 20.0f);
+        lastDeltaTime = dt;
         // Run the player controller FIRST so movement is applied before rendering
-        playerController.update(&world, (float)deltaTime);
-        audienceSystem.update(&world, (float)deltaTime);
+        playerController.update(&world, dt);
+        audienceSystem.update(&world, dt, playerController.getExcitement());
         // Run other systems
-        movementSystem.update(&world, (float)deltaTime);
-        cameraController.update(&world, (float)deltaTime);
+        movementSystem.update(&world, dt);
         // Render the scene
         renderer.render(&world);
 
@@ -367,9 +373,9 @@ class Playstate : public our::State
 
     void onImmediateGui() override
     {
-        // Draw the ATTACK / DEFEND mode HUD in the top-right corner.
+        // Draw the HUD (health bars, stance, hit pop-ups, knockdown count, KO screen).
         // Passing &renderer allows drawHUD to toggle the grayscale postprocess
-        // effect automatically when the player is knocked out.
+        // effect automatically when someone is knocked down.
         playerController.drawHUD(lastDeltaTime, &renderer);
     }
 
@@ -388,7 +394,8 @@ class Playstate : public our::State
         // and we delete all the loaded assets to free memory on the RAM and the VRAM
         our::clearAllAssets();
 
-        // Uninitialize the audio engine
+        // Release the sounds, then uninitialize the audio engine
+        playerController.releaseAudio();
         ma_engine_uninit(&audioEngine);
     }
 };
