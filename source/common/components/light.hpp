@@ -30,6 +30,10 @@ namespace our {
         float innerConeAngle = glm::radians(15.0f);
         float outerConeAngle = glm::radians(30.0f);
 
+        // Shadow mapping (only used when the renderer has shadows enabled; the first casting light wins)
+        bool  castShadows  = false;
+        float shadowRadius = 8.0f; // Directional lights: half-size of the area (around the origin) covered by the shadow map
+
         static std::string getID() { return "Light"; }
         void deserialize(const nlohmann::json& data) override;
     };

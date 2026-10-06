@@ -88,8 +88,9 @@ bool our::ShaderProgram::attach(const std::string &filename, GLenum type) const 
 
 
 bool our::ShaderProgram::link() const {
-    // Link the shader program
+    // Link the shader program (uniform locations may change, so drop any cached ones)
     glLinkProgram(program);
+    uniformLocations.clear();
 
     // Check for linking errors
     std::string error = checkForLinkingErrors(program);

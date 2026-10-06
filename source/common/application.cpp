@@ -106,6 +106,58 @@ void GLAPIENTRY opengl_callback(GLenum source, GLenum type, GLuint id, GLenum se
     << " raised from " << _source << ": " << message << std::endl;
 }
 
+// Loads nicer fonts and a more polished ImGui theme.
+// Fonts[0] = UI font, Fonts[1] = big bold font used by the in-game HUD.
+// If no system font is found, ImGui's built-in font is used instead.
+static void setupImGuiStyle() {
+    ImGuiIO& io = ImGui::GetIO();
+    auto addFirstFont = [&io](std::initializer_list<const char*> paths, float size) -> bool {
+        for(const char* path : paths){
+            if(std::filesystem::exists(path) && io.Fonts->AddFontFromFileTTF(path, size)) return true;
+        }
+        return false;
+    };
+    bool hasUI = addFirstFont({"C:/Windows/Fonts/segoeui.ttf",
+                               "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                               "/System/Library/Fonts/Supplemental/Arial.ttf"}, 18.0f);
+    if(!hasUI) io.Fonts->AddFontDefault();
+    bool hasHUD = addFirstFont({"C:/Windows/Fonts/segoeuib.ttf",
+                                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                                "/System/Library/Fonts/Supplemental/Arial Bold.ttf"}, 48.0f);
+    if(!hasHUD) io.Fonts->AddFontDefault();
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding    = 10.0f;
+    style.ChildRounding     = 8.0f;
+    style.FrameRounding     = 6.0f;
+    style.GrabRounding      = 6.0f;
+    style.PopupRounding     = 6.0f;
+    style.WindowPadding     = ImVec2(16, 14);
+    style.FramePadding      = ImVec2(10, 6);
+    style.ItemSpacing       = ImVec2(10, 8);
+    style.WindowBorderSize  = 0.0f;
+    style.WindowTitleAlign  = ImVec2(0.5f, 0.5f);
+
+    ImVec4* c = style.Colors;
+    c[ImGuiCol_WindowBg]         = ImVec4(0.07f, 0.07f, 0.09f, 0.92f);
+    c[ImGuiCol_ChildBg]          = ImVec4(1.00f, 1.00f, 1.00f, 0.03f);
+    c[ImGuiCol_TitleBg]          = ImVec4(0.45f, 0.08f, 0.08f, 1.00f);
+    c[ImGuiCol_TitleBgActive]    = ImVec4(0.62f, 0.10f, 0.10f, 1.00f);
+    c[ImGuiCol_FrameBg]          = ImVec4(0.16f, 0.16f, 0.19f, 1.00f);
+    c[ImGuiCol_FrameBgHovered]   = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
+    c[ImGuiCol_FrameBgActive]    = ImVec4(0.30f, 0.30f, 0.35f, 1.00f);
+    c[ImGuiCol_Button]           = ImVec4(0.70f, 0.13f, 0.12f, 1.00f);
+    c[ImGuiCol_ButtonHovered]    = ImVec4(0.86f, 0.22f, 0.18f, 1.00f);
+    c[ImGuiCol_ButtonActive]     = ImVec4(0.55f, 0.09f, 0.08f, 1.00f);
+    c[ImGuiCol_Header]           = ImVec4(0.70f, 0.13f, 0.12f, 0.55f);
+    c[ImGuiCol_HeaderHovered]    = ImVec4(0.86f, 0.22f, 0.18f, 0.80f);
+    c[ImGuiCol_HeaderActive]     = ImVec4(0.86f, 0.22f, 0.18f, 1.00f);
+    c[ImGuiCol_Separator]        = ImVec4(1.00f, 1.00f, 1.00f, 0.12f);
+    c[ImGuiCol_PlotHistogram]    = ImVec4(0.95f, 0.70f, 0.15f, 1.00f);
+    c[ImGuiCol_CheckMark]        = ImVec4(0.95f, 0.70f, 0.15f, 1.00f);
+    c[ImGuiCol_Border]           = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
+}
+
 void our::Application::configureOpenGL() {
     // Request that OpenGL is 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -211,6 +263,7 @@ int our::Application::run(int run_for_frames) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
+    setupImGuiStyle();
 
     // Initialize ImGui for GLFW and OpenGL
     ImGui_ImplGlfw_InitForOpenGL(window, true);

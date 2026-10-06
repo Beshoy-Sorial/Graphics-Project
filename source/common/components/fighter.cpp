@@ -13,6 +13,7 @@ namespace our {
         
         maxHealth   = data.value("maxHealth",   maxHealth);
         currentHealth = maxHealth; // Always start at full health
+        healthTrail   = maxHealth;
     }
 
 }

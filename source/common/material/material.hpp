@@ -61,8 +61,15 @@ namespace our {
         Texture2D* ambient_occlusion_map= nullptr;
         Texture2D* roughness_map        = nullptr;
         Texture2D* emissive_map         = nullptr;
+        Texture2D* normal_map           = nullptr; // Optional tangent-space normal map (OpenGL / green-up convention)
         Sampler*   sampler              = nullptr;
         glm::vec3  tint                 = glm::vec3(1.0f, 1.0f, 1.0f); // Multiplied into albedo
+        // When true the tint *recolors* the albedo (keeps the texture's light/dark detail but swaps its hue).
+        // Used by the arena colour picker for the ring and the floor. When false the tint simply multiplies.
+        bool       recolor              = false;
+        glm::vec2  uvScale              = glm::vec2(1.0f, 1.0f); // Texture tiling factor
+        float      rim                  = 0.0f;  // Strength of the fresnel rim light (HDR pipeline only)
+        float      normalStrength       = 1.0f;  // Scales the bumpiness of the normal map
 
         void setup() const override;
         void deserialize(const nlohmann::json& data) override;

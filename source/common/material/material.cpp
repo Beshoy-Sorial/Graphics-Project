@@ -88,11 +88,23 @@ namespace our {
         static Texture2D* black   = makeDefaultTexture(  0,   0,   0, 255); // emissive default (no glow)
         static Texture2D* midgray = makeDefaultTexture(128, 128, 128, 255); // roughness default (medium)
         
+        static Texture2D* flatNormal = makeDefaultTexture(128, 128, 255, 255); // normal map default (points straight out)
+
         bindMap(0, albedo_map,            white,   "material.albedo_tex");
         bindMap(1, specular_map,          white,   "material.specular_tex");
         bindMap(2, ambient_occlusion_map, white,   "material.ambient_occlusion_tex");
         bindMap(3, roughness_map,         midgray, "material.roughness_tex");
         bindMap(4, emissive_map,          black,   "material.emissive_tex");
+        bindMap(6, normal_map,            flatNormal, "material.normal_tex");
+        // Unit 5 is reserved for the shadow map (bound by the renderer). The sampler uniform must always point
+        // at it: two samplers of different types (sampler2D / sampler2DShadow) on the same unit is a GL error.
+        shader->set("shadow_map", 5);
+
+        shader->set("material_recolor", recolor ? 1 : 0);
+        shader->set("material_uv_scale", uvScale);
+        shader->set("material_rim", rim);
+        shader->set("material_has_normal_map", normal_map ? 1 : 0);
+        shader->set("material_normal_strength", normalStrength);
     }
 
     void LitMaterial::deserialize(const nlohmann::json& data){
@@ -104,7 +116,13 @@ namespace our {
         ambient_occlusion_map = AssetLoader<Texture2D>::get(data.value("ambient_occlusion_map", ""));
         roughness_map         = AssetLoader<Texture2D>::get(data.value("roughness_map",         ""));
         emissive_map          = AssetLoader<Texture2D>::get(data.value("emissive_map",          ""));
-        
+        normal_map            = AssetLoader<Texture2D>::get(data.value("normal_map",            ""));
+
+        tint           = data.value("tint", tint);   // accepts [r,g,b] or [r,g,b,a] (alpha ignored)
+        recolor        = data.value("recolor", recolor);
+        uvScale        = data.value("uvScale", uvScale);
+        rim            = data.value("rim", rim);
+        normalStrength = data.value("normalStrength", normalStrength);
     }
 
 }
